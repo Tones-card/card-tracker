@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>CardVault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);--text:#f0f0f0;--text2:#888;--text3:#555;--green:#00e676;--green-dim:rgba(0,230,118,0.12);--red:#ff5252;--red-dim:rgba(255,82,82,0.12);--blue:#448aff;--blue-dim:rgba(68,138,255,0.12);--amber:#ffab40;--amber-dim:rgba(255,171,64,0.12);--r:12px;--r-sm:8px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overscroll-behavior:none}
+.app{max-width:480px;margin:0 auto;padding:0 0 80px}
+.header{padding:20px 16px 12px;display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:22px;font-weight:600;letter-spacing:-.5px}
+.header-title span{color:var(--green)}
+.sync-pill{display:flex;align-items:center;gap:6px;font-size:11px;font-family:'DM Mono',monospace;padding:5px 10px;border-radius:99px;border:1px solid var(--border2);color:var(--text2)}
+.sync-pill.synced{border-color:rgba(0,230,118,.3);color:var(--green)}
+.sync-pill.syncing{border-color:rgba(68,138,255,.3);color:var(--blue)}
+.sync-pill.error{border-color:rgba(255,82,82,.3);color:var(--red)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.syncing .sync-dot{animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.tabs{display:flex;gap:4px;padding:0 16px 16px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:8px 16px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab.active{background:var(--green);color:#000;border-color:var(--green);font-weight:600}
+.section{display:none;padding:0 16px}
+.section.active{display:block}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.metrics .wide{grid-column:1/-1}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.metric-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-family:'DM Mono',monospace}
+.metric-value{font-size:24px;font-weight:600;letter-spacing:-.5px}
+.metric-value.pos{color:var(--green)}.metric-value.neg{color:var(--red)}
+.chart-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:20px}
+.chart-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;font-family:'DM Mono',monospace}
+.chart-wrap{position:relative;height:160px}
+.search-wrap{position:relative;margin-bottom:14px}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3)}
+.search{width:100%;padding:11px 12px 11px 38px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none}
+.search:focus{border-color:var(--border2)}
+.search::placeholder{color:var(--text3)}
+.filters{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{flex-shrink:0;padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .12s}
+.filter-btn.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color .15s,transform .1s}
+.ccard:active{transform:scale(.98)}
+.ccard:hover{border-color:var(--border2)}
+.card-img{width:100%;height:110px;object-fit:cover;display:block}
+.card-placeholder{width:100%;height:110px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:32px}
+.card-body{padding:10px}
+.card-badges{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;font-family:'DM Mono',monospace}
+.badge-sports{background:var(--blue-dim);color:var(--blue)}
+.badge-pokemon{background:var(--amber-dim);color:var(--amber)}
+.badge-hold{background:var(--green-dim);color:var(--green)}
+.badge-sold{background:var(--red-dim);color:var(--red)}
+.card-name{font-size:13px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-set{font-size:11px;color:var(--text2);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-stats{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px}
+.card-pl{font-size:12px;font-weight:600;font-family:'DM Mono',monospace}
+.empty{text-align:center;padding:48px 16px;color:var(--text3);font-size:14px;grid-column:1/-1}
+.form-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.form-block-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;font-family:'DM Mono',monospace}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-row.full{grid-template-columns:1fr}
+.field label{display:block;font-size:11px;color:var(--text2);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green)}
+.field select option{background:var(--surface2)}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--r-sm);min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;margin-bottom:10px;transition:border-color .15s}
+.upload-zone:hover{border-color:var(--green)}
+.upload-hint{text-align:center;padding:20px;font-size:13px;color:var(--text2)}
+.upload-hint .icon{font-size:28px;margin-bottom:8px}
+.upload-hint strong{display:block;color:var(--text);margin-bottom:4px}
+.scan-overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#fff;font-size:13px;z-index:10}
+.scan-bar-wrap{width:70%;height:3px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden}
+.scan-bar-inner{height:100%;background:var(--green);border-radius:99px;animation:scanprog 1.8s ease-in-out infinite}
+@keyframes scanprog{0%{width:0}60%{width:85%}100%{width:95%}}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);animation:scanline 1.8s ease-in-out infinite}
+@keyframes scanline{0%{top:0}100%{top:100%}}
+.ai-status{padding:10px 12px;border-radius:var(--r-sm);font-size:13px;margin-bottom:10px;display:none;line-height:1.5}
+.ai-status.info{background:var(--blue-dim);color:var(--blue);display:block}
+.ai-status.success{background:var(--green-dim);color:var(--green);display:block}
+.ai-status.error{background:var(--red-dim);color:var(--red);display:block}
+.ai-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;background:var(--green-dim);color:var(--green);margin-left:6px;vertical-align:middle;font-weight:600}
+.ai-price-box{background:var(--surface2);border-radius:var(--r-sm);padding:12px;margin-top:10px;font-size:13px;color:var(--text2);min-height:44px;line-height:1.6;border:1px solid var(--border)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn{padding:10px 18px;border-radius:var(--r-sm);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;border:none;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.97)}
+.btn-green{background:var(--green);color:#000;font-weight:600}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text)}
+.btn-red{background:transparent;border:1px solid rgba(255,82,82,.4);color:var(--red)}
+.btn-blue{background:transparent;border:1px solid rgba(68,138,255,.4);color:var(--blue)}
+.btn-amber{background:transparent;border:1px solid rgba(255,171,64,.4);color:var(--amber)}
+.btn-scan{width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:var(--r-sm);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;margin-top:8px;transition:all .15s}
+.btn-scan:not(:disabled):hover{border-color:var(--green);color:var(--green)}
+.btn-scan:disabled{opacity:.35;cursor:not-allowed}
+
+/* MODAL - sheet style from bottom */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r) var(--r) 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;padding:20px}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:99px;margin:0 auto 16px}
+.modal-img{width:100%;height:180px;object-fit:cover;border-radius:var(--r-sm);margin-bottom:14px}
+.modal-name{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:4px}
+.modal-rows{margin:14px 0}
+.modal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.modal-row:last-child{border-bottom:none}
+.modal-row span:first-child{color:var(--text2)}
+.modal-row span:last-child{font-weight:500;text-align:right;max-width:60%}
+
+/* EDIT MODAL */
+.edit-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.edit-modal-bg.open{display:flex}
+.edit-modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r) var(--r) 0 0;width:100%;max-width:480px;max-height:95vh;overflow-y:auto;padding:20px}
+
+.backup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.bcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.bcard h3{font-size:13px;font-weight:600;margin-bottom:6px}
+.bcard p{font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5}
+.bcard.full{grid-column:1/-1}
+.danger-zone{border:1px solid rgba(255,82,82,.25);border-radius:var(--r);padding:14px}
+.danger-zone h3{font-size:13px;font-weight:600;color:var(--red);margin-bottom:6px}
+.danger-zone p{font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5}
+.stats-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.stats-block .slabel{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.stat-row{display:flex;justify-content:space-between;font-size:13px;color:var(--text2);padding:5px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-row strong{color:var(--text)}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100;max-width:480px;margin:0 auto}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;cursor:pointer;background:none;border:none;color:var(--text3);font-size:10px;font-family:'DM Sans',sans-serif;transition:color .15s}
+.nav-btn.active{color:var(--green)}
+.nav-btn svg{width:20px;height:20px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:99px;font-size:13px;z-index:400;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;font-family:'DM Sans',sans-serif}
+.spin{display:inline-block;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.section-label{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-title">Card<span>Vault</span></div>
+    <div class="sync-pill syncing" id="syncPill"><div class="sync-dot"></div><span id="syncText">connecting</span></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="section active">
+    <div class="metrics" id="metrics"></div>
+    <div class="chart-section">
+      <div class="chart-label">P&L by category</div>
+      <div class="chart-wrap"><canvas id="plChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- COLLECTION -->
+  <div id="tab-collection" class="section">
+    <div class="search-wrap">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search" id="collSearch" placeholder="Search player, set, notes..." oninput="renderCollection()">
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="card-grid" id="cardGrid"></div>
+  </div>
+
+  <!-- ADD -->
+  <div id="tab-add" class="section">
+    <div class="form-block">
+      <div class="form-block-title">Card photo — AI scan</div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()">
+        <div class="upload-hint"><div class="icon">📷</div><strong>Tap to upload card photo</strong><div>AI reads player, set, parallel, serial #</div></div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*,image/heic,image/heif" style="display:none" onchange="handlePhoto(event,'uploadZone','scanBtn')">
+      <button class="btn-scan" id="scanBtn" onclick="scanCard()" disabled>Scan card with AI</button>
+      <div class="ai-status" id="aiStatus"></div>
+    </div>
+    <div class="form-block">
+      <div class="form-block-title" id="detailsTitle">Card details</div>
+      <div class="form-row"><div class="field"><label>Player / Card name</label><input id="f-name" placeholder="Mike Trout"></div><div class="field"><label>Year &amp; Set</label><input id="f-set" placeholder="2011 Topps Update"></div></div>
+      <div class="form-row">
+        <div class="field"><label>Category</label><select id="f-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>Pokemon</option><option>Other</option></select></div>
+        <div class="field"><label>Condition</label><select id="f-cond"><option>Raw</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>BGS 9.5</option><option>BGS 9</option><option>Other graded</option></select></div>
+      </div>
+      <div class="form-row"><div class="field"><label>Buy price ($)</label><input id="f-buy" type="number" min="0" step="0.01" placeholder="0.00"></div><div class="field"><label>Market value ($)</label><input id="f-val" type="number" min="0" step="0.01" placeholder="0.00"></div></div>
+      <div class="form-row full"><div class="field"><label>Notes (parallel, serial #, RC, auto...)</label><input id="f-notes" placeholder="e.g. Silver Prizm /99"></div></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn btn-outline" onclick="getAIPrice()">AI price estimate</button>
+        <button class="btn btn-green" onclick="addCard()">Add card</button>
+        <button class="btn btn-outline" onclick="clearForm()">Clear</button>
+      </div>
+      <div class="ai-price-box" id="aiPriceBox">Fill in card details then tap "AI price estimate"</div>
+    </div>
+  </div>
+
+  <!-- SOLD -->
+  <div id="tab-sold" class="section">
+    <div class="search-wrap">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search" id="soldSearch" placeholder="Search sold cards..." oninput="renderSold()">
+    </div>
+    <div class="card-grid" id="soldGrid"></div>
+  </div>
+
+  <!-- BACKUP -->
+  <div id="tab-backup" class="section">
+    <div style="background:var(--blue-dim);border:1px solid rgba(68,138,255,.2);border-radius:var(--r-sm);padding:12px;font-size:13px;color:var(--blue);margin-bottom:14px;line-height:1.5">
+      Syncing to <strong>Google Sheets</strong> — open this file on any device and your collection loads automatically.
+    </div>
+    <div class="backup-grid">
+      <div class="bcard"><h3>Export JSON</h3><p>Full backup with photos. Save to Google Drive.</p><button class="btn btn-green" style="width:100%;padding:9px" onclick="exportJSON()">Download</button></div>
+      <div class="bcard"><h3>Import JSON</h3><p>Restore from a previous backup file.</p><button class="btn btn-outline" style="width:100%;padding:9px" onclick="document.getElementById('importInput').click()">Import</button><input type="file" id="importInput" accept=".json" style="display:none" onchange="importJSON(event)"></div>
+      <div class="bcard full"><h3>Export CSV</h3><p>Spreadsheet of your full collection P&L. Open in Google Sheets or Excel.</p><button class="btn btn-outline" onclick="exportCSV()">Download CSV</button></div>
+    </div>
+    <div class="stats-block"><div class="slabel">Summary</div><div id="backupStats"></div></div>
+    <div class="danger-zone"><h3>Danger zone</h3><p>Delete all cards from Google Sheets. Cannot be undone — export first.</p><button class="btn btn-red" onclick="clearAll()">Delete all data</button></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <button class="nav-btn active" id="nav-dashboard" onclick="showTab('dashboard')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
+  <button class="nav-btn" id="nav-collection" onclick="showTab('collection')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 2v4M8 2v4M2 10h20"/></svg>Collection</button>
+  <button class="nav-btn" id="nav-add" onclick="showTab('add')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Add Card</button>
+  <button class="nav-btn" id="nav-sold" onclick="showTab('sold')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Sold</button>
+  <button class="nav-btn" id="nav-backup" onclick="showTab('backup')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Backup</button>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal"><div id="modal-content"></div></div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="edit-modal-bg" id="editModalBg">
+  <div class="edit-modal">
+    <div class="modal-handle"></div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:16px" id="editModalTitle">Edit Card</div>
+
+    <div class="form-block" style="margin-bottom:12px">
+      <div class="form-block-title">Photo</div>
+      <div class="upload-zone" id="editUploadZone" onclick="document.getElementById('editPhotoInput').click()">
+        <div class="upload-hint"><div class="icon">📷</div><strong>Tap to change photo</strong></div>
+      </div>
+      <input type="file" id="editPhotoInput" accept="image/*,image/heic,image/heif" style="display:none" onchange="handlePhoto(event,'editUploadZone','editScanBtn')">
+      <button class="btn-scan" id="editScanBtn" onclick="scanCardEdit()" disabled>Re-scan with AI</button>
+      <div class="ai-status" id="editAiStatus"></div>
+    </div>
+
+    <div class="form-block" style="margin-bottom:12px">
+      <div class="form-block-title">Card details</div>
+      <div class="form-row"><div class="field"><label>Player / Card name</label><input id="e-name" placeholder="Mike Trout"></div><div class="field"><label>Year &amp; Set</label><input id="e-set" placeholder="2011 Topps Update"></div></div>
+      <div class="form-row">
+        <div class="field"><label>Category</label><select id="e-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>Pokemon</option><option>Other</option></select></div>
+        <div class="field"><label>Condition</label><select id="e-cond"><option>Raw</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>BGS 9.5</option><option>BGS 9</option><option>Other graded</option></select></div>
+      </div>
+      <div class="form-row"><div class="field"><label>Buy price ($)</label><input id="e-buy" type="number" min="0" step="0.01"></div><div class="field"><label>Market value ($)</label><input id="e-val" type="number" min="0" step="0.01"></div></div>
+      <div class="form-row full"><div class="field"><label>Notes (parallel, serial #, RC, auto...)</label><input id="e-notes" placeholder="e.g. Silver Prizm /99"></div></div>
+    </div>
+
+    <div class="form-block" style="margin-bottom:12px" id="editSoldBlock">
+      <div class="form-block-title">Sale info</div>
+      <div class="form-row full"><div class="field"><label>Sale price ($) — leave blank if not sold</label><input id="e-sale" type="number" min="0" step="0.01" placeholder="Leave blank if still holding"></div></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="saveEdit()">Save changes</button>
+      <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-red" onclick="deleteFromEdit()">Delete card</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwfXRi64d-_mMbpXYYvxKIxlwu5eXxAUtBOBSdzdBDCBPt-IBdPyQfH6N6NgNZp0xTP/exec';
+const CACHE_KEY='cardvault_v2';
+
+let cards=[],plChart=null,activeFilter='All';
+let pendingPhoto=null,pendingPhotoB64=null,pendingPhotoMime='image/jpeg';
+let editPendingPhoto=null,editPendingPhotoB64=null,editPendingPhotoMime='image/jpeg';
+let editingIdx=-1,saveTimer=null;
+
+function loadCache(){try{const c=localStorage.getItem(CACHE_KEY);if(c)cards=JSON.parse(c);}catch(e){cards=[];}}
+function saveCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify(cards));}catch(e){}}
+function setSyncStatus(state,msg){const p=document.getElementById('syncPill');p.className='sync-pill '+state;document.getElementById('syncText').textContent=msg;}
+
+async function fetchFromSheet(){
+  setSyncStatus('syncing','loading');
+  try{
+    const res=await fetch(SCRIPT_URL+'?t='+Date.now());
+    const data=await res.json();
+    if(!Array.isArray(data))throw new Error('bad response');
+    const fetched=data.map(r=>({
+      name:String(r.name||''),set:String(r.set||''),category:String(r.category||'Other'),
+      condition:String(r.condition||'Raw'),buyPrice:parseFloat(r.buyPrice)||0,
+      marketValue:parseFloat(r.marketValue)||0,notes:String(r.notes||''),
+      sold:r.sold==='true'||r.sold===true,
+      salePrice:parseFloat(r.salePrice)||0,
+      addedAt:parseInt(r.addedAt)||Date.now(),
+      photo:r.photo&&String(r.photo).length>200?String(r.photo):null
+    })).filter(c=>c.name.trim());
+    // PRESERVE sold cards: merge sheet data keeping all sold cards
+    cards=fetched;
+    saveCache();
+    setSyncStatus('synced','synced');
+  }catch(e){
+    loadCache();
+    setSyncStatus('error','offline — using cache');
+  }
+  renderDashboard();renderCollection();
+}
+
+async function pushToSheet(){
+  clearTimeout(saveTimer);
+  saveCache();
+  saveTimer=setTimeout(async()=>{
+    setSyncStatus('syncing','saving');
+    try{
+      const res=await fetch(SCRIPT_URL,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:'save',cards})
+      });
+      const text=await res.text();
+      if(text.includes('ok'))setSyncStatus('synced','synced');
+      else throw new Error(text.slice(0,80));
+    }catch(e){
+      setSyncStatus('error','sync failed — saved locally');
+      showToast('Saved locally — check connection');
+    }
+  },700);
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,3000);}
+
+function showTab(tab){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('nav-'+tab).classList.add('active');
+  if(tab==='dashboard')renderDashboard();
+  if(tab==='collection')renderCollection();
+  if(tab==='sold')renderSold();
+  if(tab==='backup')renderBackupTab();
+}
+
+function catBadge(c){return c==='Pokemon'?'badge-pokemon':'badge-sports';}
+function pl(c){return c.sold?(c.salePrice-c.buyPrice):(c.marketValue-c.buyPrice);}
+function plStr(v){return(v>=0?'+':'-')+'$'+Math.abs(v).toFixed(2);}
+function catEmoji(cat){return{Baseball:'⚾',Basketball:'🏀',Football:'🏈',Hockey:'🏒',Soccer:'⚽',Pokemon:'✦',Other:'🃏'}[cat]||'🃏';}
+
+function renderDashboard(){
+  const held=cards.filter(c=>!c.sold),sold=cards.filter(c=>c.sold);
+  const totalVal=held.reduce((s,c)=>s+c.marketValue,0);
+  const unrealized=held.reduce((s,c)=>s+(c.marketValue-c.buyPrice),0);
+  const realized=sold.reduce((s,c)=>s+(c.salePrice-c.buyPrice),0);
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Cards held</div><div class="metric-value">${held.length}</div></div>
+    <div class="metric"><div class="metric-label">Cards sold</div><div class="metric-value">${sold.length}</div></div>
+    <div class="metric wide"><div class="metric-label">Collection value</div><div class="metric-value">$${totalVal.toFixed(2)}</div></div>
+    <div class="metric"><div class="metric-label">Unrealized P&L</div><div class="metric-value ${unrealized>=0?'pos':'neg'}">${plStr(unrealized)}</div></div>
+    <div class="metric"><div class="metric-label">Realized profit</div><div class="metric-value ${realized>=0?'pos':'neg'}">${plStr(realized)}</div></div>`;
+  const cats=[...new Set(cards.map(c=>c.category))];
+  const catData=cats.map(cat=>({cat,val:cards.filter(c=>c.category===cat).reduce((s,c)=>s+pl(c),0)}));
+  if(plChart){plChart.destroy();plChart=null;}
+  const wrap=document.querySelector('.chart-wrap');
+  if(!catData.length){wrap.innerHTML='<div style="padding:2rem;text-align:center;color:var(--text3);font-size:13px">Add cards to see breakdown</div>';return;}
+  if(!wrap.querySelector('canvas'))wrap.innerHTML='<canvas id="plChart"></canvas>';
+  plChart=new Chart(document.getElementById('plChart'),{type:'bar',data:{labels:catData.map(d=>d.cat),datasets:[{data:catData.map(d=>parseFloat(d.val.toFixed(2))),backgroundColor:catData.map(d=>d.val>=0?'#00e676':'#ff5252'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>(v<0?'-':'')+'$'+Math.abs(v),color:'#555',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#555',font:{size:11}},grid:{display:false}}}}});
+}
+
+function renderCollection(){
+  const q=(document.getElementById('collSearch')?.value||'').toLowerCase();
+  const held=cards.filter(c=>!c.sold);
+  const cats=['All',...new Set(held.map(c=>c.category))];
+  document.getElementById('filters').innerHTML=cats.map(c=>`<button class="filter-btn ${c===activeFilter?'active':''}" onclick="setFilter('${c}')">${c}</button>`).join('');
+  let f=activeFilter==='All'?held:held.filter(c=>c.category===activeFilter);
+  if(q)f=f.filter(c=>c.name.toLowerCase().includes(q)||(c.set||'').toLowerCase().includes(q)||c.category.toLowerCase().includes(q)||(c.notes||'').toLowerCase().includes(q));
+  if(!f.length){document.getElementById('cardGrid').innerHTML=`<div class="empty">${q?'No cards match':'No cards yet — add your first one!'}</div>`;return;}
+  document.getElementById('cardGrid').innerHTML=f.map(c=>{
+    const idx=cards.indexOf(c),gain=pl(c);
+    const img=c.photo?`<img src="${c.photo}" class="card-img" alt="${c.name}">`:`<div class="card-placeholder">${catEmoji(c.category)}</div>`;
+    return `<div class="ccard" onclick="openCard(${idx})">${img}<div class="card-body">
+      <div class="card-badges"><span class="badge ${catBadge(c.category)}">${c.category}</span><span class="badge badge-hold">holding</span></div>
+      <div class="card-name">${c.name}</div>
+      <div class="card-set">${c.set||''} ${c.condition?'· '+c.condition:''}</div>
+      <div class="card-stats"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
+      <div class="card-stats"><span>Value</span><span>$${c.marketValue.toFixed(2)}</span></div>
+      <div class="card-pl" style="color:${gain>=0?'var(--green)':'var(--red)'}">${plStr(gain)}</div>
+    </div></div>`;
+  }).join('');
+}
+
+function setFilter(f){activeFilter=f;renderCollection();}
+
+function renderSold(){
+  const q=(document.getElementById('soldSearch')?.value||'').toLowerCase();
+  let sold=cards.filter(c=>c.sold);
+  if(q)sold=sold.filter(c=>c.name.toLowerCase().includes(q)||(c.set||'').toLowerCase().includes(q));
+  if(!sold.length){document.getElementById('soldGrid').innerHTML=`<div class="empty">${q?'No match':'No sold cards yet'}</div>`;return;}
+  document.getElementById('soldGrid').innerHTML=sold.map(c=>{
+    const idx=cards.indexOf(c),gain=c.salePrice-c.buyPrice;
+    const img=c.photo?`<img src="${c.photo}" class="card-img" alt="${c.name}">`:`<div class="card-placeholder">${catEmoji(c.category)}</div>`;
+    return `<div class="ccard" onclick="openCard(${idx})">${img}<div class="card-body">
+      <div class="card-badges"><span class="badge ${catBadge(c.category)}">${c.category}</span><span class="badge badge-sold">sold</span></div>
+      <div class="card-name">${c.name}</div>
+      <div class="card-set">${c.set||''}</div>
+      <div class="card-stats"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
+      <div class="card-stats"><span>Sold for</span><span>$${c.salePrice.toFixed(2)}</span></div>
+      <div class="card-pl" style="color:${gain>=0?'var(--green)':'var(--red)'}">${plStr(gain)} realized</div>
+    </div></div>`;
+  }).join('');
+}
+
+function renderBackupTab(){
+  const held=cards.filter(c=>!c.sold),sold=cards.filter(c=>c.sold);
+  document.getElementById('backupStats').innerHTML=`
+    <div class="stat-row"><span>Total cards</span><strong>${cards.length}</strong></div>
+    <div class="stat-row"><span>Currently holding</span><strong>${held.length}</strong></div>
+    <div class="stat-row"><span>Sold</span><strong>${sold.length}</strong></div>
+    <div class="stat-row"><span>Total invested</span><strong>$${held.reduce((s,c)=>s+c.buyPrice,0).toFixed(2)}</strong></div>
+    <div class="stat-row"><span>Collection value</span><strong>$${held.reduce((s,c)=>s+c.marketValue,0).toFixed(2)}</strong></div>
+    <div class="stat-row"><span>Realized profit</span><strong style="color:${sold.reduce((s,c)=>s+(c.salePrice-c.buyPrice),0)>=0?'var(--green)':'var(--red)'}">${plStr(sold.reduce((s,c)=>s+(c.salePrice-c.buyPrice),0))}</strong></div>
+    <div class="stat-row"><span>Cards with photos</span><strong>${cards.filter(c=>c.photo).length}</strong></div>`;
+}
+
+// ---- PHOTO HANDLING (shared between add & edit) ----
+function handlePhoto(e, zoneId, btnId){
+  const file=e.target.files[0];if(!file)return;
+  const mime=file.type||'image/jpeg';
+  const safeMime=['image/heic','image/heif',''].includes(mime)?'image/jpeg':mime;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const dataUrl=ev.target.result;
+    const b64=dataUrl.split(',')[1];
+    if(zoneId==='uploadZone'){pendingPhoto=dataUrl;pendingPhotoB64=b64;pendingPhotoMime=safeMime;}
+    else{editPendingPhoto=dataUrl;editPendingPhotoB64=b64;editPendingPhotoMime=safeMime;}
+    const zone=document.getElementById(zoneId);
+    zone.innerHTML=`<img src="${dataUrl}" style="width:100%;height:160px;object-fit:cover;display:block" alt="Card">`;
+    document.getElementById(btnId).disabled=false;
+    if(zoneId==='uploadZone')setAIStatus('info','Photo loaded — tap Scan to auto-fill');
+    else setEditAIStatus('info','Photo loaded — tap Re-scan to update details');
+  };
+  reader.readAsDataURL(file);
+}
+
+function setAIStatus(type,msg){const el=document.getElementById('aiStatus');el.className='ai-status '+type;el.textContent=msg;}
+function setEditAIStatus(type,msg){const el=document.getElementById('editAiStatus');el.className='ai-status '+type;el.textContent=msg;}
+
+async function doScan(b64, mime, nameId, setId, catId, condId, notesId, statusFn){
+  const validMimes=['image/jpeg','image/png','image/gif','image/webp'];
+  const useMime=validMimes.includes(mime)?mime:'image/jpeg';
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:useMime,data:b64}},{type:'text',text:`Expert trading card identifier. Respond ONLY with raw JSON, no markdown:
+{"name":"player or Pokemon name","year":"4-digit year","set":"full set name with year","category":"one of: Baseball Basketball Football Hockey Soccer Pokemon Other","condition":"one of: Raw PSA 10 PSA 9 PSA 8 BGS 9.5 BGS 9 Other graded","notes":"parallel type, /serial, RC, auto, relic — empty if none","confidence":"high medium low"}
+Use Raw unless you see a PSA/BGS grading case.`}]}]})});
+  const data=await res.json();
+  if(data.error)throw new Error(data.error.message);
+  const raw=data.content?.map(b=>b.text||'').join('')||'';
+  const match=raw.match(/\{[\s\S]*\}/);if(!match)throw new Error('No JSON');
+  const p=JSON.parse(match[0]);const filled=[];
+  if(p.name?.trim()){document.getElementById(nameId).value=p.name.trim();filled.push('name');}
+  if(p.set?.trim()){document.getElementById(setId).value=p.set.trim();filled.push('set');}
+  else if(p.year?.trim()){document.getElementById(setId).value=p.year.trim();}
+  if(['Baseball','Basketball','Football','Hockey','Soccer','Pokemon','Other'].includes(p.category)){document.getElementById(catId).value=p.category;filled.push('category');}
+  if(['Raw','PSA 10','PSA 9','PSA 8','BGS 9.5','BGS 9','Other graded'].includes(p.condition)){document.getElementById(condId).value=p.condition;filled.push('condition');}
+  if(p.notes?.trim()){document.getElementById(notesId).value=p.notes.trim();filled.push('notes');}
+  if(!filled.length)statusFn('error','Unclear — try better lighting or fill manually.');
+  else statusFn('success',`Filled: ${filled.join(', ')}${p.confidence==='low'?' — please review':''}. Add prices to finish.`);
+}
+
+async function scanCard(){
+  if(!pendingPhotoB64){showToast('Upload a photo first');return;}
+  const btn=document.getElementById('scanBtn');btn.disabled=true;btn.textContent='Scanning…';
+  const zone=document.getElementById('uploadZone');
+  const ov=document.createElement('div');ov.className='scan-overlay';
+  ov.innerHTML=`<div>Reading card…</div><div class="scan-bar-wrap"><div class="scan-bar-inner"></div></div><div class="scan-line"></div>`;
+  zone.appendChild(ov);setAIStatus('info','AI reading your card…');
+  try{await doScan(pendingPhotoB64,pendingPhotoMime,'f-name','f-set','f-cat','f-cond','f-notes',setAIStatus);}
+  catch(e){setAIStatus('error','Scan failed: '+e.message.slice(0,60));}
+  try{zone.removeChild(ov);}catch(e){}
+  btn.disabled=false;btn.textContent='Scan card with AI';
+}
+
+async function scanCardEdit(){
+  if(!editPendingPhotoB64){showToast('Upload a photo first');return;}
+  const btn=document.getElementById('editScanBtn');btn.disabled=true;btn.textContent='Scanning…';
+  const zone=document.getElementById('editUploadZone');
+  const ov=document.createElement('div');ov.className='scan-overlay';
+  ov.innerHTML=`<div>Reading card…</div><div class="scan-bar-wrap"><div class="scan-bar-inner"></div></div><div class="scan-line"></div>`;
+  zone.appendChild(ov);setEditAIStatus('info','AI reading your card…');
+  try{await doScan(editPendingPhotoB64,editPendingPhotoMime,'e-name','e-set','e-cat','e-cond','e-notes',setEditAIStatus);}
+  catch(e){setEditAIStatus('error','Scan failed: '+e.message.slice(0,60));}
+  try{zone.removeChild(ov);}catch(e){}
+  btn.disabled=false;btn.textContent='Re-scan with AI';
+}
+
+async function getAIPrice(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){showToast('Enter card name first');return;}
+  const box=document.getElementById('aiPriceBox');
+  box.innerHTML='<span class="spin">◌</span> Getting estimate…';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Trading card expert. Value estimate for: "${name}", set: ${document.getElementById('f-set').value||'?'}, sport: ${document.getElementById('f-cat').value}, condition: ${document.getElementById('f-cond').value}, notes: ${document.getElementById('f-notes').value||'none'}. 3-4 sentences: dollar range, key value factors, note this is AI estimate — verify on Card Ladder or eBay completed sales.`}]})});
+    const data=await res.json();
+    box.textContent=data.content?.map(b=>b.text||'').join('')||'No response.';
+  }catch(e){box.textContent='Could not fetch estimate.';}
+}
+
+function addCard(){
+  const name=document.getElementById('f-name').value.trim();
+  const buy=parseFloat(document.getElementById('f-buy').value);
+  const val=parseFloat(document.getElementById('f-val').value);
+  if(!name||isNaN(buy)||isNaN(val)){showToast('Fill in name, buy price, and market value');return;}
+  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now()});
+  pushToSheet();clearForm();showToast('Card added — syncing!');showTab('collection');
+}
+
+function clearForm(){
+  ['f-name','f-set','f-buy','f-val','f-notes'].forEach(id=>document.getElementById(id).value='');
+  pendingPhoto=null;pendingPhotoB64=null;pendingPhotoMime='image/jpeg';
+  const zone=document.getElementById('uploadZone');
+  zone.innerHTML=`<div class="upload-hint"><div class="icon">📷</div><strong>Tap to upload card photo</strong><div>AI reads player, set, parallel, serial #</div></div>`;
+  document.getElementById('photoInput').value='';
+  document.getElementById('scanBtn').disabled=true;document.getElementById('scanBtn').textContent='Scan card with AI';
+  document.getElementById('aiStatus').className='ai-status';
+  document.getElementById('aiPriceBox').textContent='Fill in card details then tap "AI price estimate"';
+  document.getElementById('detailsTitle').textContent='Card details';
+}
+
+// ---- VIEW MODAL ----
+function openCard(idx){
+  const c=cards[idx],gain=pl(c);
+  const clUrl=`https://www.cardladder.com/cards?q=${encodeURIComponent(c.name+' '+(c.set||''))}`;
+  const ebayUrl=`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(c.name+' '+(c.set||'')+' '+c.condition)}&LH_Sold=1&LH_Complete=1`;
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-handle"></div>
+    ${c.photo?`<img src="${c.photo}" class="modal-img" alt="${c.name}">`:''}
+    <div class="modal-name">${c.name}</div>
+    <span class="badge ${catBadge(c.category)}">${c.category}</span>
+    ${c.sold?'<span class="badge badge-sold" style="margin-left:6px">sold</span>':''}
+    <div class="modal-rows">
+      <div class="modal-row"><span>Set</span><span>${c.set||'—'}</span></div>
+      <div class="modal-row"><span>Condition</span><span>${c.condition}</span></div>
+      ${c.notes?`<div class="modal-row"><span>Notes</span><span>${c.notes}</span></div>`:''}
+      <div class="modal-row"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
+      <div class="modal-row"><span>Market value</span><span>$${c.marketValue.toFixed(2)}</span></div>
+      ${c.sold?`<div class="modal-row"><span>Sold for</span><span>$${c.salePrice.toFixed(2)}</span></div>`:''}
+      <div class="modal-row"><span>${c.sold?'Realized':'Unrealized'} P&L</span><span style="color:${gain>=0?'var(--green)':'var(--red)'};font-family:'DM Mono',monospace">${plStr(gain)}</span></div>
+    </div>
+    <div class="btn-row">
+      <a href="${clUrl}" target="_blank" style="text-decoration:none"><button class="btn btn-blue">Card Ladder</button></a>
+      <a href="${ebayUrl}" target="_blank" style="text-decoration:none"><button class="btn btn-blue">eBay comps</button></a>
+    </div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn btn-amber" onclick="openEditModal(${idx})">✏️ Edit card</button>
+      ${!c.sold?`<button class="btn btn-green" onclick="markSold(${idx})">Mark sold</button>`:''}
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>`;
+  document.getElementById('modalBg').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modalBg').classList.remove('open');}
+document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===document.getElementById('modalBg'))closeModal();});
+
+// ---- EDIT MODAL ----
+function openEditModal(idx){
+  editingIdx=idx;
+  editPendingPhoto=null;editPendingPhotoB64=null;editPendingPhotoMime='image/jpeg';
+  const c=cards[idx];
+  document.getElementById('editModalTitle').textContent='Edit — '+c.name;
+  document.getElementById('e-name').value=c.name||'';
+  document.getElementById('e-set').value=c.set||'';
+  document.getElementById('e-cat').value=c.category||'Baseball';
+  document.getElementById('e-cond').value=c.condition||'Raw';
+  document.getElementById('e-buy').value=c.buyPrice||'';
+  document.getElementById('e-val').value=c.marketValue||'';
+  document.getElementById('e-notes').value=c.notes||'';
+  document.getElementById('e-sale').value=c.sold&&c.salePrice?c.salePrice:'';
+  // photo preview
+  const zone=document.getElementById('editUploadZone');
+  if(c.photo){
+    zone.innerHTML=`<img src="${c.photo}" style="width:100%;height:160px;object-fit:cover;display:block" alt="Card">`;
+  } else {
+    zone.innerHTML=`<div class="upload-hint"><div class="icon">📷</div><strong>Tap to change photo</strong></div>`;
+  }
+  document.getElementById('editScanBtn').disabled=true;
+  document.getElementById('editScanBtn').textContent='Re-scan with AI';
+  document.getElementById('editAiStatus').className='ai-status';
+  document.getElementById('editPhotoInput').value='';
+  closeModal();
+  document.getElementById('editModalBg').classList.add('open');
+}
+
+function closeEditModal(){document.getElementById('editModalBg').classList.remove('open');editingIdx=-1;}
+
+function saveEdit(){
+  if(editingIdx<0)return;
+  const name=document.getElementById('e-name').value.trim();
+  const buy=parseFloat(document.getElementById('e-buy').value);
+  const val=parseFloat(document.getElementById('e-val').value);
+  if(!name||isNaN(buy)||isNaN(val)){showToast('Name, buy price and market value are required');return;}
+  const saleVal=document.getElementById('e-sale').value.trim();
+  const salePrice=parseFloat(saleVal);
+  const isSold=!isNaN(salePrice)&&saleVal!=='';
+  // use new photo if uploaded, otherwise keep existing
+  const photo=editPendingPhoto||cards[editingIdx].photo;
+  cards[editingIdx]={
+    ...cards[editingIdx],
+    name,
+    set:document.getElementById('e-set').value.trim(),
+    category:document.getElementById('e-cat').value,
+    condition:document.getElementById('e-cond').value,
+    buyPrice:buy,
+    marketValue:val,
+    notes:document.getElementById('e-notes').value.trim(),
+    photo,
+    sold:isSold,
+    salePrice:isSold?salePrice:cards[editingIdx].salePrice||0
+  };
+  pushToSheet();
+  closeEditModal();
+  showToast('Card updated — syncing!');
+  renderCollection();renderSold();renderDashboard();
+}
+
+function deleteFromEdit(){
+  if(editingIdx<0)return;
+  if(!confirm(`Delete ${cards[editingIdx].name}? Cannot be undone.`))return;
+  cards.splice(editingIdx,1);
+  pushToSheet();closeEditModal();showToast('Card deleted');
+  renderCollection();renderSold();renderDashboard();
+}
+
+function markSold(idx){
+  const p=parseFloat(prompt('Sale price ($)?'));
+  if(isNaN(p))return;
+  cards[idx].sold=true;cards[idx].salePrice=p;
+  pushToSheet();closeModal();showToast('Marked sold — syncing!');renderCollection();renderSold();renderDashboard();
+}
+
+function exportJSON(){
+  const b=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),version:10,cards},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cardvault-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  showToast('Backup downloaded!');
+}
+function exportCSV(){
+  const h=['Name','Set','Category','Condition','Notes','Buy Price','Market Value','Status','Sale Price','P&L','Added'];
+  const rows=cards.map(c=>[`"${c.name}"`,`"${c.set||''}"`,c.category,c.condition,`"${c.notes||''}"`,c.buyPrice.toFixed(2),c.marketValue.toFixed(2),c.sold?'Sold':'Holding',c.sold?c.salePrice.toFixed(2):'',pl(c).toFixed(2),new Date(c.addedAt).toLocaleDateString()]);
+  const b=new Blob([[h.join(','),...rows.map(r=>r.join(','))].join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cards-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  showToast('CSV exported');
+}
+function importJSON(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const data=JSON.parse(ev.target.result);
+      const imported=data.cards||(Array.isArray(data)?data:[]);
+      if(!imported.length){showToast('No cards found');return;}
+      const existing=new Set(cards.map(c=>c.name+'|'+(c.addedAt||'')));
+      let added=0;
+      imported.forEach(c=>{const k=c.name+'|'+(c.addedAt||'');if(!existing.has(k)){cards.push(c);added++;existing.add(k);}});
+      pushToSheet();showToast(`Imported ${added} card${added!==1?'s':''}`);
+      renderDashboard();renderCollection();renderBackupTab();
+    }catch(err){showToast('Could not read file');}
+    document.getElementById('importInput').value='';
+  };
+  reader.readAsText(file);
+}
+function clearAll(){
+  if(!confirm('Delete ALL cards? Cannot be undone.'))return;
+  if(!confirm('Final warning — are you sure?'))return;
+  cards=[];pushToSheet();renderDashboard();renderCollection();renderBackupTab();showToast('All data cleared');
+}
+
+loadCache();renderDashboard();fetchFromSheet();
+</script>
+</body>
+</html>
