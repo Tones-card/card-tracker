@@ -148,6 +148,15 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 @keyframes spin{to{transform:rotate(360deg)}}
 .divider{height:1px;background:var(--border);margin:14px 0}
 .section-label{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.box-calc{background:var(--amber-dim);border:1px solid rgba(255,171,64,.25);border-radius:var(--r-sm);padding:14px;margin-bottom:12px}
+.box-calc-title{font-size:11px;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:8px}
+.box-calc-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.box-calc-result{background:rgba(0,0,0,.3);border-radius:var(--r-sm);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:10px}
+.box-calc-result span:first-child{color:var(--text2)}
+.box-calc-result strong{color:var(--amber);font-family:'DM Mono',monospace;font-size:16px}
+.box-toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:10px;user-select:none}
+.box-toggle input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer}
+.pull-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;background:var(--amber-dim);color:var(--amber);font-family:'DM Mono',monospace;font-weight:600;margin-left:4px}
 </style>
 </head>
 <body>
@@ -178,6 +187,32 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 
   <!-- ADD -->
   <div id="tab-add" class="section">
+
+    <!-- BOX CALCULATOR -->
+    <div class="form-block" style="margin-bottom:12px">
+      <div class="form-block-title">📦 Pack / Box pull?</div>
+      <label class="box-toggle">
+        <input type="checkbox" id="boxToggle" onchange="toggleBoxCalc()">
+        This card came from a pack or hobby box
+      </label>
+      <div id="boxCalcArea" style="display:none">
+        <div class="box-calc">
+          <div class="box-calc-title">📦 Box cost calculator</div>
+          <div class="box-calc-row">
+            <div class="field"><label>Box / pack cost ($)</label><input id="bc-price" type="number" min="0" step="0.01" placeholder="e.g. 150.00" oninput="calcBoxCost()"></div>
+            <div class="field"><label>Cards from this box</label><input id="bc-cards" type="number" min="1" step="1" placeholder="e.g. 10" oninput="calcBoxCost()"></div>
+          </div>
+          <div class="box-calc-result">
+            <span>Cost per card</span>
+            <strong id="bc-result">—</strong>
+          </div>
+          <button class="btn btn-outline" style="width:100%;border-color:rgba(255,171,64,.4);color:var(--amber);font-size:13px;padding:9px" onclick="applyBoxCost()">Apply cost per card → Buy price</button>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.6">
+          💡 Enter your box price and how many cards you're pulling from it. The cost splits evenly across all cards so your P&L stays accurate.
+        </div>
+      </div>
+    </div>
     <div class="form-block">
       <div class="form-block-title">Card photo — AI scan</div>
       <div class="upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()">
@@ -539,6 +574,12 @@ function clearForm(){
   document.getElementById('aiStatus').className='ai-status';
   document.getElementById('aiPriceBox').textContent='Fill in card details then tap "AI price estimate"';
   document.getElementById('detailsTitle').textContent='Card details';
+  // reset box calculator
+  document.getElementById('boxToggle').checked=false;
+  document.getElementById('boxCalcArea').style.display='none';
+  document.getElementById('bc-price').value='';
+  document.getElementById('bc-cards').value='';
+  document.getElementById('bc-result').textContent='—';
 }
 
 // ---- VIEW MODAL ----
@@ -689,6 +730,45 @@ function clearAll(){
 }
 
 loadCache();renderDashboard();fetchFromSheet();
+
+// BOX CALCULATOR
+function toggleBoxCalc(){
+  const on=document.getElementById('boxToggle').checked;
+  document.getElementById('boxCalcArea').style.display=on?'block':'none';
+  if(!on){
+    document.getElementById('bc-price').value='';
+    document.getElementById('bc-cards').value='';
+    document.getElementById('bc-result').textContent='—';
+  }
+}
+
+function calcBoxCost(){
+  const price=parseFloat(document.getElementById('bc-price').value);
+  const count=parseFloat(document.getElementById('bc-cards').value);
+  if(!isNaN(price)&&!isNaN(count)&&count>0){
+    const perCard=(price/count).toFixed(2);
+    document.getElementById('bc-result').textContent='$'+perCard;
+  } else {
+    document.getElementById('bc-result').textContent='—';
+  }
+}
+
+function applyBoxCost(){
+  const price=parseFloat(document.getElementById('bc-price').value);
+  const count=parseFloat(document.getElementById('bc-cards').value);
+  if(isNaN(price)||isNaN(count)||count<=0){
+    showToast('Enter box price and number of cards first');return;
+  }
+  const perCard=(price/count).toFixed(2);
+  document.getElementById('f-buy').value=perCard;
+  // add note about pull
+  const existing=document.getElementById('f-notes').value.trim();
+  const pullNote=`Box pull ($${price} box ÷ ${count} cards)`;
+  if(!existing.includes('Box pull')){
+    document.getElementById('f-notes').value=existing?existing+', '+pullNote:pullNote;
+  }
+  showToast('Buy price set to $'+perCard+' per card');
+}
 
 // Register service worker for PWA
 if('serviceWorker' in navigator){
