@@ -56,8 +56,8 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:border-color .15s,transform .1s}
 .ccard:active{transform:scale(.98)}
 .ccard:hover{border-color:var(--border2)}
-.card-img{width:100%;height:110px;object-fit:cover;display:block}
-.card-placeholder{width:100%;height:110px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:32px}
+.card-img{width:100%;height:160px;object-fit:contain;display:block;background:var(--surface2);padding:6px}
+.card-placeholder{width:100%;height:160px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:32px}
 .card-body{padding:10px}
 .card-badges{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;font-family:'DM Mono',monospace}
@@ -112,7 +112,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .modal-bg.open{display:flex}
 .modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r) var(--r) 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;padding:20px}
 .modal-handle{width:36px;height:4px;background:var(--border2);border-radius:99px;margin:0 auto 16px}
-.modal-img{width:100%;height:180px;object-fit:cover;border-radius:var(--r-sm);margin-bottom:14px}
+.modal-img{width:100%;height:260px;object-fit:contain;background:var(--surface2);padding:8px;border-radius:var(--r-sm);margin-bottom:14px}
 .modal-name{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:4px}
 .modal-rows{margin:14px 0}
 .modal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
