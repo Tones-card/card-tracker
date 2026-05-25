@@ -207,6 +207,24 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .public-title{font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
 .public-sub{font-size:14px;color:var(--text2)}
 .public-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+
+/* THEMES */
+body.theme-purple{--acc:#B48EFF;--acc-dim:rgba(180,142,255,0.12);--acc-dark:#7A5CF0;--bg:#1a1428;--surface:#231b38;--surface2:#2d2248;--border:rgba(180,142,255,0.12);--border2:rgba(180,142,255,0.25);--text:#f0eeff;--text2:#8875aa;--text3:#5a4d75;--green:#60E6B0;--green-dim:rgba(96,230,176,0.12);--red:#F87171;--red-dim:rgba(248,113,113,0.12);--blue:#B48EFF;--blue-dim:rgba(180,142,255,0.12);--amber:#F9A825;--amber-dim:rgba(249,168,37,0.12)}
+body.theme-ocean{--acc:#38BDF8;--acc-dim:rgba(56,189,248,0.12);--acc-dark:#0EA5E9;--bg:#0a1628;--surface:#0f1e38;--surface2:#162840;--border:rgba(56,189,248,0.12);--border2:rgba(56,189,248,0.25);--text:#e0f0ff;--text2:#4d7094;--text3:#2d4d6a;--green:#34D399;--green-dim:rgba(52,211,153,0.12);--red:#F87171;--red-dim:rgba(248,113,113,0.12);--blue:#38BDF8;--blue-dim:rgba(56,189,248,0.12);--amber:#F9A825;--amber-dim:rgba(249,168,37,0.12)}
+body.theme-amber{--acc:#F59E0B;--acc-dim:rgba(245,158,11,0.12);--acc-dark:#D97706;--bg:#18120a;--surface:#231908;--surface2:#2e2210;--border:rgba(245,158,11,0.12);--border2:rgba(245,158,11,0.25);--text:#fff8e0;--text2:#7a6035;--text3:#4d3c1a;--green:#4ADE80;--green-dim:rgba(74,222,128,0.12);--red:#F87171;--red-dim:rgba(248,113,113,0.12);--blue:#60A5FA;--blue-dim:rgba(96,165,250,0.12);--amber:#F59E0B;--amber-dim:rgba(245,158,11,0.12)}
+body.theme-crimson{--acc:#F87171;--acc-dim:rgba(248,113,113,0.12);--acc-dark:#EF4444;--bg:#140a0a;--surface:#1f0e0e;--surface2:#2a1212;--border:rgba(248,113,113,0.12);--border2:rgba(248,113,113,0.25);--text:#ffe0e0;--text2:#7a4040;--text3:#4d2020;--green:#34D399;--green-dim:rgba(52,211,153,0.12);--red:#F87171;--red-dim:rgba(248,113,113,0.12);--blue:#60A5FA;--blue-dim:rgba(96,165,250,0.12);--amber:#F9A825;--amber-dim:rgba(249,168,37,0.12)}
+body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c853;--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#222;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);--text:#f0f0f0;--text2:#888;--text3:#555;--green:#00e676;--green-dim:rgba(0,230,118,0.12);--red:#ff5252;--red-dim:rgba(255,82,82,0.12);--blue:#448aff;--blue-dim:rgba(68,138,255,0.12);--amber:#ffab40;--amber-dim:rgba(255,171,64,0.12)}
+/* Apply theme accent colors */
+.header-title span,.metric-value.pos,.sync-pill.synced,.tab.active,.btn-green,.badge-hold,.nav-btn.active,.quick-val-btn{color:var(--acc)}
+.tab.active{background:var(--acc);color:#000 !important}
+.nav-btn.active{color:var(--acc)}
+.btn-green{background:var(--acc);color:#000}
+.metric-value.pos{color:var(--green)}
+.metric-value.neg{color:var(--red)}
+.card-pl{color:var(--green)}
+.theme-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;flex-shrink:0}
+.theme-swatch.active{border-color:var(--text);transform:scale(1.1)}
+.theme-swatch:hover{transform:scale(1.08)}
 </style>
 </head>
 <body>
@@ -325,6 +343,84 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   </div>
 
   <div id="tab-settings" class="section">
+
+    <div class="form-block" style="margin-bottom:14px">
+      <div class="form-block-title">🎨 App theme</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5">Mix and match background and accent colors — saved automatically.</div>
+
+      <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Background</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setBg('dark')">
+          <div class="theme-swatch" id="bg-dark" style="background:#0f0f0f;border:1.5px solid #444"></div>
+          <div style="font-size:10px;color:var(--text2)">Dark</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setBg('purple')">
+          <div class="theme-swatch" id="bg-purple" style="background:#1a1428"></div>
+          <div style="font-size:10px;color:var(--text2)">Purple</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setBg('ocean')">
+          <div class="theme-swatch" id="bg-ocean" style="background:#0a1628"></div>
+          <div style="font-size:10px;color:var(--text2)">Ocean</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setBg('amber')">
+          <div class="theme-swatch" id="bg-amber" style="background:#18120a"></div>
+          <div style="font-size:10px;color:var(--text2)">Amber</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setBg('crimson')">
+          <div class="theme-swatch" id="bg-crimson" style="background:#140a0a"></div>
+          <div style="font-size:10px;color:var(--text2)">Crimson</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setBg('forest')">
+          <div class="theme-swatch" id="bg-forest" style="background:#0a1a0e"></div>
+          <div style="font-size:10px;color:var(--text2)">Forest</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setBg('slate')">
+          <div class="theme-swatch" id="bg-slate" style="background:#0e1219"></div>
+          <div style="font-size:10px;color:var(--text2)">Slate</div>
+        </div>
+      </div>
+
+      <div style="font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Accent color</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setAccent('green')">
+          <div class="theme-swatch" id="ac-green" style="background:#00e676"></div>
+          <div style="font-size:10px;color:var(--text2)">Green</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setAccent('purple')">
+          <div class="theme-swatch" id="ac-purple" style="background:#B48EFF"></div>
+          <div style="font-size:10px;color:var(--text2)">Purple</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setAccent('blue')">
+          <div class="theme-swatch" id="ac-blue" style="background:#38BDF8"></div>
+          <div style="font-size:10px;color:var(--text2)">Blue</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setAccent('amber')">
+          <div class="theme-swatch" id="ac-amber" style="background:#F59E0B"></div>
+          <div style="font-size:10px;color:var(--text2)">Amber</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setAccent('red')">
+          <div class="theme-swatch" id="ac-red" style="background:#F87171"></div>
+          <div style="font-size:10px;color:var(--text2)">Red</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setAccent('pink')">
+          <div class="theme-swatch" id="ac-pink" style="background:#F472B6"></div>
+          <div style="font-size:10px;color:var(--text2)">Pink</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setAccent('teal')">
+          <div class="theme-swatch" id="ac-teal" style="background:#2DD4BF"></div>
+          <div style="font-size:10px;color:var(--text2)">Teal</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer" onclick="setAccent('gold')">
+          <div class="theme-swatch" id="ac-gold" style="background:#EAB308"></div>
+          <div style="font-size:10px;color:var(--text2)">Gold</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:12px;color:var(--text2)">Current: <span id="themePreviewLabel" style="color:var(--text)">Dark + Green</span></div>
+        <button class="btn btn-outline" style="font-size:12px;padding:5px 12px" onclick="resetTheme()">Reset</button>
+      </div>
+    </div>
     <div class="form-block">
       <div class="form-block-title">🤖 AI scan &amp; price estimate</div>
       <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
@@ -1459,6 +1555,81 @@ function checkPublicView(){
   }catch(e){return false;}
 }
 
+
+// THEME SWITCHER — MIX & MATCH
+const BG_THEMES={
+  dark:  {bg:'#0f0f0f',surface:'#1a1a1a',surface2:'#222',border:'rgba(255,255,255,0.08)',border2:'rgba(255,255,255,0.15)',text:'#f0f0f0',text2:'#888',text3:'#555'},
+  purple:{bg:'#1a1428',surface:'#231b38',surface2:'#2d2248',border:'rgba(180,142,255,0.1)',border2:'rgba(180,142,255,0.22)',text:'#f0eeff',text2:'#8875aa',text3:'#5a4d75'},
+  ocean: {bg:'#0a1628',surface:'#0f1e38',surface2:'#162840',border:'rgba(56,189,248,0.1)',border2:'rgba(56,189,248,0.22)',text:'#e0f0ff',text2:'#4d7094',text3:'#2d4d6a'},
+  amber: {bg:'#18120a',surface:'#231908',surface2:'#2e2210',border:'rgba(245,158,11,0.1)',border2:'rgba(245,158,11,0.22)',text:'#fff8e0',text2:'#7a6035',text3:'#4d3c1a'},
+  crimson:{bg:'#140a0a',surface:'#1f0e0e',surface2:'#2a1212',border:'rgba(248,113,113,0.1)',border2:'rgba(248,113,113,0.22)',text:'#ffe0e0',text2:'#7a4040',text3:'#4d2020'},
+  forest:{bg:'#0a1a0e',surface:'#0f2014',surface2:'#162a1c',border:'rgba(74,222,128,0.1)',border2:'rgba(74,222,128,0.22)',text:'#e0ffe8',text2:'#4d7a5a',text3:'#2d4d38'},
+  slate: {bg:'#0e1219',surface:'#141c26',surface2:'#1a2433',border:'rgba(148,163,184,0.1)',border2:'rgba(148,163,184,0.22)',text:'#e2e8f0',text2:'#64748b',text3:'#3d4f63'},
+};
+const ACCENT_THEMES={
+  green: {acc:'#00e676',accDim:'rgba(0,230,118,0.12)'},
+  purple:{acc:'#B48EFF',accDim:'rgba(180,142,255,0.12)'},
+  blue:  {acc:'#38BDF8',accDim:'rgba(56,189,248,0.12)'},
+  amber: {acc:'#F59E0B',accDim:'rgba(245,158,11,0.12)'},
+  red:   {acc:'#F87171',accDim:'rgba(248,113,113,0.12)'},
+  pink:  {acc:'#F472B6',accDim:'rgba(244,114,182,0.12)'},
+  teal:  {acc:'#2DD4BF',accDim:'rgba(45,212,191,0.12)'},
+  gold:  {acc:'#EAB308',accDim:'rgba(234,179,8,0.12)'},
+};
+const BG_LABELS={dark:'Dark',purple:'Purple',ocean:'Ocean',amber:'Amber',crimson:'Crimson',forest:'Forest',slate:'Slate'};
+const AC_LABELS={green:'Green',purple:'Purple',blue:'Blue',amber:'Amber',red:'Red',pink:'Pink',teal:'Teal',gold:'Gold'};
+
+let currentBg='dark', currentAccent='green';
+
+function applyTheme(){
+  const bg=BG_THEMES[currentBg]||BG_THEMES.dark;
+  const ac=ACCENT_THEMES[currentAccent]||ACCENT_THEMES.green;
+  const root=document.documentElement;
+  root.style.setProperty('--bg',bg.bg);
+  root.style.setProperty('--surface',bg.surface);
+  root.style.setProperty('--surface2',bg.surface2);
+  root.style.setProperty('--border',bg.border);
+  root.style.setProperty('--border2',bg.border2);
+  root.style.setProperty('--text',bg.text);
+  root.style.setProperty('--text2',bg.text2);
+  root.style.setProperty('--text3',bg.text3);
+  root.style.setProperty('--green',ac.acc);
+  root.style.setProperty('--green-dim',ac.accDim);
+  // update nav active color
+  document.querySelectorAll('.nav-btn.active').forEach(el=>el.style.color=ac.acc);
+  document.querySelectorAll('.sync-pill.synced').forEach(el=>el.style.color=ac.acc);
+  // update label
+  const lbl=document.getElementById('themePreviewLabel');
+  if(lbl)lbl.textContent=(BG_LABELS[currentBg]||currentBg)+' + '+(AC_LABELS[currentAccent]||currentAccent);
+  // update swatch active states
+  Object.keys(BG_THEMES).forEach(k=>{const sw=document.getElementById('bg-'+k);if(sw)sw.classList.toggle('active',k===currentBg);});
+  Object.keys(ACCENT_THEMES).forEach(k=>{const sw=document.getElementById('ac-'+k);if(sw)sw.classList.toggle('active',k===currentAccent);});
+  renderDashboard();
+}
+
+function setBg(bg){
+  currentBg=bg;
+  localStorage.setItem('cardvault_bg',bg);
+  applyTheme();
+}
+function setAccent(ac){
+  currentAccent=ac;
+  localStorage.setItem('cardvault_accent',ac);
+  applyTheme();
+}
+function resetTheme(){
+  currentBg='dark';currentAccent='green';
+  localStorage.setItem('cardvault_bg','dark');
+  localStorage.setItem('cardvault_accent','green');
+  applyTheme();
+}
+function loadTheme(){
+  currentBg=localStorage.getItem('cardvault_bg')||'dark';
+  currentAccent=localStorage.getItem('cardvault_accent')||'green';
+  applyTheme();
+}
+function setTheme(t){setBg(t);}
+
 // SETTINGS — GEMINI KEY (stored privately in browser only)
 function saveGeminiKey(){
   const key=document.getElementById('geminiKeyInput').value.trim();
@@ -1486,6 +1657,11 @@ function updateKeyBadge(){
   else{badge.textContent='⚠️ No key set — paste key above and tap Save';badge.style.color='var(--amber)';}
 }
 function renderSettingsTab(){
+  Object.keys(BG_THEMES).forEach(k=>{const sw=document.getElementById('bg-'+k);if(sw)sw.classList.toggle('active',k===currentBg);});
+  Object.keys(ACCENT_THEMES).forEach(k=>{const sw=document.getElementById('ac-'+k);if(sw)sw.classList.toggle('active',k===currentAccent);});
+  const lbl=document.getElementById('themePreviewLabel');
+  if(lbl)lbl.textContent=(BG_LABELS[currentBg]||currentBg)+' + '+(AC_LABELS[currentAccent]||currentAccent);
+
   // migrate old key slot if needed
   const old=localStorage.getItem('gemini_key');
   if(old&&old.startsWith('sk-ant-')){localStorage.setItem('anthropic_key',old);localStorage.removeItem('gemini_key');}
@@ -1497,7 +1673,7 @@ function renderSettingsTab(){
 }
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
-if(!checkPublicView()){loadCache();renderDashboard();fetchFromSheet();updateKeyBadge();}
+if(!checkPublicView()){loadTheme();loadCache();renderDashboard();fetchFromSheet();updateKeyBadge();}
 </script>
 </body>
 </html>
