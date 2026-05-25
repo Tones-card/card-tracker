@@ -305,6 +305,34 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     </div>
   </div>
 
+  <div id="tab-settings" class="section">
+    <div class="form-block">
+      <div class="form-block-title">🤖 AI scan &amp; price estimate</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+        Uses Google Gemini (free). Get your free API key at <a href="https://aistudio.google.com" target="_blank" style="color:var(--blue)">aistudio.google.com</a> → Get API key → Create API key.
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Gemini API key</label>
+        <div style="display:flex;gap:8px">
+          <input id="geminiKeyInput" type="password" placeholder="Paste your key here — AIzaSy..." style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:14px;font-family:'DM Mono',monospace;outline:none">
+          <button class="btn btn-green" onclick="saveGeminiKey()" style="flex-shrink:0;padding:10px 16px">Save</button>
+        </div>
+      </div>
+      <div id="keyStatus" style="font-size:13px;padding:10px 12px;border-radius:var(--r-sm);display:none"></div>
+      <div style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6">
+        🔒 Your key is saved privately in your browser only — never uploaded to GitHub or anywhere else.
+      </div>
+    </div>
+
+    <div class="form-block">
+      <div class="form-block-title">⚙️ App info</div>
+      <div class="stat-row"><span>App version</span><strong>CardVault 1.0</strong></div>
+      <div class="stat-row"><span>Google Sheet sync</span><strong style="color:var(--green)">Connected</strong></div>
+      <div class="stat-row"><span>AI provider</span><strong>Google Gemini 1.5 Flash</strong></div>
+      <div class="stat-row"><span>AI key status</span><strong id="keyStatusBadge">Checking…</strong></div>
+    </div>
+  </div>
+
   <div id="tab-backup" class="section">
     <div style="background:var(--blue-dim);border:1px solid rgba(68,138,255,.2);border-radius:var(--r-sm);padding:12px;font-size:13px;color:var(--blue);margin-bottom:14px;line-height:1.5">
       Syncing to <strong>Google Sheets</strong> — open on any device and your collection loads automatically.
@@ -326,6 +354,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
   <button class="nav-btn" id="nav-grading" onclick="showTab('grading')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/></svg>Grading</button>
   <button class="nav-btn" id="nav-sold" onclick="showTab('sold')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Sold</button>
   <button class="nav-btn" id="nav-backup" onclick="showTab('backup')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Backup</button>
+  <button class="nav-btn" id="nav-settings" onclick="showTab('settings')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
 </div>
 
 <!-- VIEW MODAL -->
@@ -544,6 +573,7 @@ function showTab(tab){
   if(tab==='sold')renderSold();
   if(tab==='grading')renderGrading();
   if(tab==='backup')renderBackupTab();
+  if(tab==='settings')renderSettingsTab();
 }
 
 function catBadge(c){return c==='Pokemon'?'badge-pokemon':c==='UFC'?'badge-ufc':'badge-sports';}
@@ -653,7 +683,8 @@ function setAIStatus(t,m){const el=document.getElementById('aiStatus');el.classN
 function setEditAIStatus(t,m){const el=document.getElementById('editAiStatus');el.className='ai-status '+t;el.textContent=m;}
 
 async function doScan(b64,mime,ids,statusFn){
-  const GEMINI_KEY='AIzaSyDehYuRjPtTijO99aCW9T_p0CMWF-Zf8ZA';
+  const GEMINI_KEY=localStorage.getItem('gemini_key')||'';
+  if(!GEMINI_KEY){statusFn('error','No API key set — go to Settings tab to add your Gemini key');return;}
   const prompt=`You are an expert trading card identifier. Examine this card carefully and respond ONLY with raw JSON, no markdown, no explanation:
 {"name":"full player or Pokemon name on card","year":"4-digit year","set":"complete set name including year e.g. 2026 Bowman Chrome","category":"exactly one of: Baseball Basketball Football Hockey Soccer UFC Pokemon Other","condition":"exactly one of: Raw PSA 10 PSA 9 PSA 8 BGS 9.5 BGS 9 Other graded","notes":"parallel type e.g. Refractor Gold, serial number /99, RC rookie, Auto autograph, Relic — empty string if none","confidence":"high medium or low"}
 Use Raw for condition unless you can clearly see a PSA or BGS grading label on a hard plastic case.`;
@@ -716,7 +747,8 @@ async function getAIPrice(){
   if(!name){showToast('Enter card name first');return;}
   const box=document.getElementById('aiPriceBox');
   box.innerHTML='<span class="spin">◌</span> Getting estimate…';
-  const GEMINI_KEY='AIzaSyDehYuRjPtTijO99aCW9T_p0CMWF-Zf8ZA';
+  const GEMINI_KEY=localStorage.getItem('gemini_key')||'';
+  if(!GEMINI_KEY){statusFn('error','No API key set — go to Settings tab to add your Gemini key');return;}
   const prompt=`You are a sports and trading card market expert. Give a realistic estimated current market value range for this card: "${name}", set: ${document.getElementById('f-set').value||'unknown'}, sport/category: ${document.getElementById('f-cat').value}, condition: ${document.getElementById('f-cond').value}, notes: ${document.getElementById('f-notes').value||'none'}. Keep it to 3-4 sentences: state a dollar range, explain the key value factors, and note this is an AI estimate based on training data — recommend verifying on Card Ladder or eBay completed sales for current pricing.`;
   try{
     const res=await fetch(\`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=\${GEMINI_KEY}\`,{
