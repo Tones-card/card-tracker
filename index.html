@@ -158,6 +158,20 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .box-toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:10px;user-select:none}
 .box-toggle input{width:16px;height:16px;accent-color:var(--amber);cursor:pointer}
 .pull-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;background:var(--amber-dim);color:var(--amber);font-family:'DM Mono',monospace;font-weight:600;margin-left:4px}
+.watch-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:99px;background:rgba(255,82,82,0.15);color:#ff7043;font-family:'DM Mono',monospace;font-weight:600}
+.target-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:99px;background:var(--green-dim);color:var(--green);font-family:'DM Mono',monospace;font-weight:600}
+.price-history{margin-top:10px}
+.price-history-title{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.price-history-entry{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.price-history-entry:last-child{border-bottom:none}
+.price-history-entry span:first-child{color:var(--text2)}
+.price-history-entry strong{font-family:'DM Mono',monospace}
+.target-bar-wrap{background:var(--surface2);border-radius:99px;height:6px;margin:6px 0 4px;overflow:hidden}
+.target-bar-fill{height:100%;border-radius:99px;background:var(--green);transition:width 0.4s}
+.watch-block{background:rgba(255,112,67,0.08);border:1px solid rgba(255,112,67,0.2);border-radius:var(--r-sm);padding:12px;margin-bottom:10px}
+.watch-block-title{font-size:11px;font-weight:600;color:#ff7043;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-family:'DM Mono',monospace}
+.ccard-watch{border-color:rgba(255,112,67,0.35)!important}
+.ccard-target-hit{border-color:rgba(0,230,118,0.5)!important;box-shadow:0 0 12px rgba(0,230,118,0.15)}
 </style>
 </head>
 <body>
@@ -316,6 +330,33 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
       <button class="btn btn-red" onclick="deleteFromEdit()">Delete card</button>
     </div>
+
+    <div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+    <div class="watch-block">
+      <div class="watch-block-title">🎯 Watch list & sell target</div>
+      <label class="box-toggle" style="margin-bottom:12px">
+        <input type="checkbox" id="e-watch" style="accent-color:#ff7043">
+        <span style="color:var(--text)">Mark as event pending (fight coming up)</span>
+      </label>
+      <div class="form-row">
+        <div class="field"><label>Next event / fight date</label><input id="e-event" placeholder="e.g. UFC 315 May 10"></div>
+        <div class="field"><label>Opponent</label><input id="e-opponent" placeholder="e.g. Yair Rodriguez"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Sell target if wins ($)</label><input id="e-target-win" type="number" min="0" step="0.01" placeholder="e.g. 150.00"></div>
+        <div class="field"><label>Sell target if loses ($)</label><input id="e-target-lose" type="number" min="0" step="0.01" placeholder="e.g. 40.00"></div>
+      </div>
+      <div class="form-row full">
+        <div class="field"><label>Exact eBay comp search (to filter out other versions)</label><input id="e-comp" placeholder="e.g. Evloev Midnight /99 prizm"></div>
+      </div>
+      <button class="btn btn-outline" style="width:100%;border-color:rgba(255,112,67,.4);color:#ff7043;font-size:13px;padding:9px;margin-top:4px" onclick="saveWatchFields()">Save watch list info</button>
+    </div>
+
+    <div id="editPriceHistoryBlock" style="display:none;margin-top:4px">
+      <div class="price-history-title">📈 Value history</div>
+      <div id="editPriceHistoryList"></div>
+    </div>
   </div>
 </div>
 
@@ -347,7 +388,12 @@ async function fetchFromSheet(){
       sold:r.sold==='true'||r.sold===true,
       salePrice:parseFloat(r.salePrice)||0,
       addedAt:parseInt(r.addedAt)||Date.now(),
-      photo:r.photo&&String(r.photo).length>200?String(r.photo):null
+      photo:r.photo&&String(r.photo).length>200?String(r.photo):null,
+      watch:r.watch==='true'||r.watch===true,
+      event:String(r.event||''),opponent:String(r.opponent||''),
+      targetWin:parseFloat(r.targetWin)||0,targetLose:parseFloat(r.targetLose)||0,
+      comp:String(r.comp||''),
+      priceHistory:r.priceHistory?JSON.parse(String(r.priceHistory)):[]
     })).filter(c=>c.name.trim());
     // PRESERVE sold cards: merge sheet data keeping all sold cards
     cards=fetched;
@@ -430,13 +476,17 @@ function renderCollection(){
   document.getElementById('cardGrid').innerHTML=f.map(c=>{
     const idx=cards.indexOf(c),gain=pl(c);
     const img=c.photo?`<img src="${c.photo}" class="card-img" alt="${c.name}">`:`<div class="card-placeholder">${catEmoji(c.category)}</div>`;
-    return `<div class="ccard" onclick="openCard(${idx})">${img}<div class="card-body">
-      <div class="card-badges"><span class="badge ${catBadge(c.category)}">${c.category}</span><span class="badge badge-hold">holding</span></div>
+    const targetHit=c.targetWin>0&&c.marketValue>=c.targetWin;
+    const watchClass=targetHit?'ccard-target-hit':c.watch?'ccard-watch':'';
+    return `<div class="ccard ${watchClass}" onclick="openCard(${idx})">${img}<div class="card-body">
+      <div class="card-badges"><span class="badge ${catBadge(c.category)}">${c.category}</span><span class="badge badge-hold">${c.watch?'🔥':''} holding</span></div>
       <div class="card-name">${c.name}</div>
       <div class="card-set">${c.set||''} ${c.condition?'· '+c.condition:''}</div>
       <div class="card-stats"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
       <div class="card-stats"><span>Value</span><span>$${c.marketValue.toFixed(2)}</span></div>
       <div class="card-pl" style="color:${gain>=0?'var(--green)':'var(--red)'}">${plStr(gain)}</div>
+      ${targetHit?`<div style="font-size:10px;color:var(--green);margin-top:4px;font-family:'DM Mono',monospace">🎯 target hit!</div>`:''}
+      ${c.watch&&c.event&&!targetHit?`<div style="font-size:10px;color:#ff7043;margin-top:4px">${c.event}</div>`:''}
     </div></div>`;
   }).join('');
 }
@@ -561,7 +611,7 @@ function addCard(){
   const buy=parseFloat(document.getElementById('f-buy').value);
   const val=parseFloat(document.getElementById('f-val').value);
   if(!name||isNaN(buy)||isNaN(val)){showToast('Fill in name, buy price, and market value');return;}
-  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now()});
+  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[]});
   pushToSheet();clearForm();showToast('Card added — syncing!');showTab('collection');
 }
 
@@ -587,13 +637,41 @@ function clearForm(){
 function openCard(idx){
   const c=cards[idx],gain=pl(c);
   const clUrl=`https://www.cardladder.com/cards?q=${encodeURIComponent(c.name+' '+(c.set||''))}`;
-  const ebayUrl=`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(c.name+' '+(c.set||'')+' '+c.condition)}&LH_Sold=1&LH_Complete=1`;
+  const compQuery=c.comp||c.name+' '+(c.set||'')+' '+c.condition;
+  const ebayUrl=`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(compQuery)}&LH_Sold=1&LH_Complete=1`;
+  // target progress
+  const targetWin=c.targetWin||0;
+  const targetProgress=targetWin>0?Math.min(100,Math.round((c.marketValue/targetWin)*100)):0;
+  const targetHit=targetWin>0&&c.marketValue>=targetWin;
+  // price history
+  const history=c.priceHistory||[];
+  const historyHtml=history.length?`
+    <div style="margin-top:14px">
+      <div class="price-history-title">📈 Value history</div>
+      ${history.slice().reverse().map(h=>`<div class="price-history-entry"><span>${h.date}</span><strong>$${parseFloat(h.price).toFixed(2)}</strong></div>`).join('')}
+      <div class="price-history-entry" style="border-top:1px solid var(--border);margin-top:4px;padding-top:8px"><span>Current</span><strong style="color:var(--green)">$${c.marketValue.toFixed(2)}</strong></div>
+    </div>`:'';
+  const watchHtml=c.watch?`
+    <div class="watch-block" style="margin-top:12px">
+      <div class="watch-block-title">🔥 Event pending</div>
+      ${c.event?`<div style="font-size:13px;color:var(--text);margin-bottom:4px">${c.event}</div>`:''}
+      ${c.opponent?`<div style="font-size:12px;color:var(--text2);margin-bottom:10px">vs ${c.opponent}</div>`:''}
+      ${targetWin>0?`
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Target if wins: <strong style="color:${targetHit?'var(--green)':'var(--text)'}">$${targetWin.toFixed(2)}</strong>${targetHit?' ✅ TARGET HIT':''}</div>
+        <div class="target-bar-wrap"><div class="target-bar-fill" style="width:${targetProgress}%;background:${targetHit?'var(--green)':'var(--amber)'}"></div></div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${targetProgress}% of target</div>`:''}
+      ${c.targetLose>0?`<div style="font-size:12px;color:var(--text2)">Target if loses: <strong>$${c.targetLose.toFixed(2)}</strong></div>`:''}
+    </div>`:'';
   document.getElementById('modal-content').innerHTML=`
     <div class="modal-handle"></div>
     ${c.photo?`<img src="${c.photo}" class="modal-img" alt="${c.name}">`:''}
     <div class="modal-name">${c.name}</div>
-    <span class="badge ${catBadge(c.category)}">${c.category}</span>
-    ${c.sold?'<span class="badge badge-sold" style="margin-left:6px">sold</span>':''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;margin-bottom:2px">
+      <span class="badge ${catBadge(c.category)}">${c.category}</span>
+      ${c.sold?'<span class="badge badge-sold">sold</span>':''}
+      ${c.watch?'<span class="watch-badge">🔥 event pending</span>':''}
+      ${targetHit?'<span class="target-badge">🎯 target hit — consider selling!</span>':''}
+    </div>
     <div class="modal-rows">
       <div class="modal-row"><span>Set</span><span>${c.set||'—'}</span></div>
       <div class="modal-row"><span>Condition</span><span>${c.condition}</span></div>
@@ -603,9 +681,11 @@ function openCard(idx){
       ${c.sold?`<div class="modal-row"><span>Sold for</span><span>$${c.salePrice.toFixed(2)}</span></div>`:''}
       <div class="modal-row"><span>${c.sold?'Realized':'Unrealized'} P&L</span><span style="color:${gain>=0?'var(--green)':'var(--red)'};font-family:'DM Mono',monospace">${plStr(gain)}</span></div>
     </div>
-    <div class="btn-row">
+    ${watchHtml}
+    ${historyHtml}
+    <div class="btn-row" style="margin-top:14px">
       <a href="${clUrl}" target="_blank" style="text-decoration:none"><button class="btn btn-blue">Card Ladder</button></a>
-      <a href="${ebayUrl}" target="_blank" style="text-decoration:none"><button class="btn btn-blue">eBay comps</button></a>
+      <a href="${ebayUrl}" target="_blank" style="text-decoration:none"><button class="btn btn-blue">${c.comp?'eBay (filtered)':'eBay comps'}</button></a>
     </div>
     <div class="btn-row" style="margin-top:8px">
       <button class="btn btn-amber" onclick="openEditModal(${idx})">✏️ Edit card</button>
@@ -632,10 +712,27 @@ function openEditModal(idx){
   document.getElementById('e-val').value=c.marketValue||'';
   document.getElementById('e-notes').value=c.notes||'';
   document.getElementById('e-sale').value=c.sold&&c.salePrice?c.salePrice:'';
+  // watch fields
+  document.getElementById('e-watch').checked=c.watch||false;
+  document.getElementById('e-event').value=c.event||'';
+  document.getElementById('e-opponent').value=c.opponent||'';
+  document.getElementById('e-target-win').value=c.targetWin||'';
+  document.getElementById('e-target-lose').value=c.targetLose||'';
+  document.getElementById('e-comp').value=c.comp||'';
+  // price history
+  const history=c.priceHistory||[];
+  const histBlock=document.getElementById('editPriceHistoryBlock');
+  const histList=document.getElementById('editPriceHistoryList');
+  if(history.length){
+    histBlock.style.display='block';
+    histList.innerHTML=history.slice().reverse().map(h=>`<div class="price-history-entry"><span>${h.date}</span><strong>$${parseFloat(h.price).toFixed(2)}</strong></div>`).join('');
+  } else {
+    histBlock.style.display='none';
+  }
   // photo preview
   const zone=document.getElementById('editUploadZone');
   if(c.photo){
-    zone.innerHTML=`<img src="${c.photo}" style="width:100%;height:160px;object-fit:cover;display:block" alt="Card">`;
+    zone.innerHTML=`<img src="${c.photo}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card">`;
   } else {
     zone.innerHTML=`<div class="upload-hint"><div class="icon">📷</div><strong>Tap to change photo</strong></div>`;
   }
@@ -658,8 +755,14 @@ function saveEdit(){
   const saleVal=document.getElementById('e-sale').value.trim();
   const salePrice=parseFloat(saleVal);
   const isSold=!isNaN(salePrice)&&saleVal!=='';
-  // use new photo if uploaded, otherwise keep existing
   const photo=editPendingPhoto||cards[editingIdx].photo;
+  // log price history if market value changed
+  const oldVal=cards[editingIdx].marketValue;
+  const history=cards[editingIdx].priceHistory||[];
+  if(val!==oldVal&&oldVal>0){
+    history.push({price:oldVal,date:new Date().toLocaleDateString()});
+    if(history.length>20)history.shift(); // keep last 20
+  }
   cards[editingIdx]={
     ...cards[editingIdx],
     name,
@@ -671,7 +774,8 @@ function saveEdit(){
     notes:document.getElementById('e-notes').value.trim(),
     photo,
     sold:isSold,
-    salePrice:isSold?salePrice:cards[editingIdx].salePrice||0
+    salePrice:isSold?salePrice:cards[editingIdx].salePrice||0,
+    priceHistory:history
   };
   pushToSheet();
   closeEditModal();
@@ -679,7 +783,18 @@ function saveEdit(){
   renderCollection();renderSold();renderDashboard();
 }
 
-function deleteFromEdit(){
+function saveWatchFields(){
+  if(editingIdx<0)return;
+  cards[editingIdx].watch=document.getElementById('e-watch').checked;
+  cards[editingIdx].event=document.getElementById('e-event').value.trim();
+  cards[editingIdx].opponent=document.getElementById('e-opponent').value.trim();
+  cards[editingIdx].targetWin=parseFloat(document.getElementById('e-target-win').value)||0;
+  cards[editingIdx].targetLose=parseFloat(document.getElementById('e-target-lose').value)||0;
+  cards[editingIdx].comp=document.getElementById('e-comp').value.trim();
+  pushToSheet();
+  showToast('Watch list saved — syncing!');
+  renderCollection();
+}
   if(editingIdx<0)return;
   if(!confirm(`Delete ${cards[editingIdx].name}? Cannot be undone.`))return;
   cards.splice(editingIdx,1);
