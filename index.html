@@ -65,6 +65,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .badge-pokemon{background:var(--amber-dim);color:var(--amber)}
 .badge-hold{background:var(--green-dim);color:var(--green)}
 .badge-sold{background:var(--red-dim);color:var(--red)}
+.badge-ufc{background:rgba(255,82,82,0.15);color:#ff7043}
 .card-name{font-size:13px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-set{font-size:11px;color:var(--text2);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-stats{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px}
@@ -226,7 +227,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <div class="form-block-title" id="detailsTitle">Card details</div>
       <div class="form-row"><div class="field"><label>Player / Card name</label><input id="f-name" placeholder="Mike Trout"></div><div class="field"><label>Year &amp; Set</label><input id="f-set" placeholder="2011 Topps Update"></div></div>
       <div class="form-row">
-        <div class="field"><label>Category</label><select id="f-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>Pokemon</option><option>Other</option></select></div>
+        <div class="field"><label>Category</label><select id="f-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>UFC</option><option>Pokemon</option><option>Other</option></select></div>
         <div class="field"><label>Condition</label><select id="f-cond"><option>Raw</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>BGS 9.5</option><option>BGS 9</option><option>Other graded</option></select></div>
       </div>
       <div class="form-row"><div class="field"><label>Buy price ($)</label><input id="f-buy" type="number" min="0" step="0.01" placeholder="0.00"></div><div class="field"><label>Market value ($)</label><input id="f-val" type="number" min="0" step="0.01" placeholder="0.00"></div></div>
@@ -298,7 +299,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <div class="form-block-title">Card details</div>
       <div class="form-row"><div class="field"><label>Player / Card name</label><input id="e-name" placeholder="Mike Trout"></div><div class="field"><label>Year &amp; Set</label><input id="e-set" placeholder="2011 Topps Update"></div></div>
       <div class="form-row">
-        <div class="field"><label>Category</label><select id="e-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>Pokemon</option><option>Other</option></select></div>
+        <div class="field"><label>Category</label><select id="e-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>UFC</option><option>Pokemon</option><option>Other</option></select></div>
         <div class="field"><label>Condition</label><select id="e-cond"><option>Raw</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>BGS 9.5</option><option>BGS 9</option><option>Other graded</option></select></div>
       </div>
       <div class="form-row"><div class="field"><label>Buy price ($)</label><input id="e-buy" type="number" min="0" step="0.01"></div><div class="field"><label>Market value ($)</label><input id="e-val" type="number" min="0" step="0.01"></div></div>
@@ -393,10 +394,10 @@ function showTab(tab){
   if(tab==='backup')renderBackupTab();
 }
 
-function catBadge(c){return c==='Pokemon'?'badge-pokemon':'badge-sports';}
+function catBadge(c){return c==='Pokemon'?'badge-pokemon':c==='UFC'?'badge-ufc':'badge-sports';}
 function pl(c){return c.sold?(c.salePrice-c.buyPrice):(c.marketValue-c.buyPrice);}
 function plStr(v){return(v>=0?'+':'-')+'$'+Math.abs(v).toFixed(2);}
-function catEmoji(cat){return{Baseball:'⚾',Basketball:'🏀',Football:'🏈',Hockey:'🏒',Soccer:'⚽',Pokemon:'✦',Other:'🃏'}[cat]||'🃏';}
+function catEmoji(cat){return{Baseball:'⚾',Basketball:'🏀',Football:'🏈',Hockey:'🏒',Soccer:'⚽',UFC:'🥊',Pokemon:'✦',Other:'🃏'}[cat]||'🃏';}
 
 function renderDashboard(){
   const held=cards.filter(c=>!c.sold),sold=cards.filter(c=>c.sold);
@@ -510,7 +511,7 @@ Use Raw unless you see a PSA/BGS grading case.`}]}]})});
   if(p.name?.trim()){document.getElementById(nameId).value=p.name.trim();filled.push('name');}
   if(p.set?.trim()){document.getElementById(setId).value=p.set.trim();filled.push('set');}
   else if(p.year?.trim()){document.getElementById(setId).value=p.year.trim();}
-  if(['Baseball','Basketball','Football','Hockey','Soccer','Pokemon','Other'].includes(p.category)){document.getElementById(catId).value=p.category;filled.push('category');}
+  if(['Baseball','Basketball','Football','Hockey','Soccer','UFC','Pokemon','Other'].includes(p.category)){document.getElementById(catId).value=p.category;filled.push('category');}
   if(['Raw','PSA 10','PSA 9','PSA 8','BGS 9.5','BGS 9','Other graded'].includes(p.condition)){document.getElementById(condId).value=p.condition;filled.push('condition');}
   if(p.notes?.trim()){document.getElementById(notesId).value=p.notes.trim();filled.push('notes');}
   if(!filled.length)statusFn('error','Unclear — try better lighting or fill manually.');
