@@ -740,7 +740,7 @@ function clearForm(){
 
 function openCard(idx){
   const c=cards[idx],gain=pl(c);
-  const clUrl=`https://www.cardladder.com/cards?q=${encodeURIComponent(c.name+' '+(c.set||''))}`;
+  const clUrl=c.comp?buildCLUrl(c.name,c.set,'',c.comp):buildCLUrl(c.name,c.set,'',c.notes||'');
   const compQ=c.comp||c.name+' '+(c.set||'')+' '+c.condition;
   const ebayUrl=`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(compQ)}&LH_Sold=1&LH_Complete=1`;
   const targetHit=c.targetWin>0&&c.marketValue>=c.targetWin;
