@@ -826,7 +826,7 @@ function openEditModal(idx){
   document.getElementById('e-comp').value=c.comp||'';
   document.getElementById('e-pull').value=c.pull||'';
   // pre-fill Card Ladder URL
-  const clUrl=c.comp?buildCLUrl(c.name,c.set,c.condition,c.comp):buildCLUrl(c.name,c.set,c.condition,c.notes);
+  const clUrl=c.comp?buildCLUrl(c.name,c.set,'',c.comp):buildCLUrl(c.name,c.set,'',c.notes);
   document.getElementById('e-clurl').value=clUrl;
   const zone=document.getElementById('editUploadZone');
   zone.innerHTML=c.photo?`<img src="${c.photo}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card">`:`<div class="upload-hint"><div class="icon">📷</div><strong>Tap to change photo</strong></div>`;
@@ -959,7 +959,8 @@ function applyBoxCost(){
 
 // CARD LADDER URL BUILDER
 function buildCLUrl(name, set, condition, notes){
-  const parts=[name, set, condition, notes].filter(Boolean).join(' ').trim();
+  // Order: set first, then player name, then notes — condition excluded (CL searches by grade separately)
+  const parts=[set, name, notes].filter(Boolean).join(' ').trim();
   if(!parts)return'https://app.cardladder.com/sales-history?sort=date&direction=desc&q=';
   return'https://app.cardladder.com/sales-history?sort=date&direction=desc&q='+encodeURIComponent(parts);
 }
@@ -969,7 +970,7 @@ function refreshCLUrl(){
   const set=document.getElementById('f-set').value.trim();
   const cond=document.getElementById('f-cond').value;
   const notes=document.getElementById('f-notes').value.trim();
-  const url=buildCLUrl(name,set,cond,notes);
+  const url=buildCLUrl(name,set,'',notes);
   document.getElementById('f-clurl').value=url;
 }
 
@@ -980,7 +981,7 @@ function openCLFromAdd(e){
   const set=document.getElementById('f-set').value.trim();
   const cond=document.getElementById('f-cond').value;
   const notes=document.getElementById('f-notes').value.trim();
-  const url=custom||buildCLUrl(name,set,cond,notes);
+  const url=custom||buildCLUrl(name,set,'',notes);
   if(!url)return;
   window.open(url,'_blank');
 }
@@ -990,7 +991,7 @@ function refreshEditCLUrl(){
   const set=document.getElementById('e-set').value.trim();
   const cond=document.getElementById('e-cond').value;
   const notes=document.getElementById('e-notes').value.trim();
-  document.getElementById('e-clurl').value=buildCLUrl(name,set,cond,notes);
+  document.getElementById('e-clurl').value=buildCLUrl(name,set,'',notes);
 }
 
 function openEditCL(){
@@ -999,7 +1000,7 @@ function openEditCL(){
   const set=document.getElementById('e-set').value.trim();
   const cond=document.getElementById('e-cond').value;
   const notes=document.getElementById('e-notes').value.trim();
-  const url=custom||buildCLUrl(name,set,cond,notes);
+  const url=custom||buildCLUrl(name,set,'',notes);
   if(url)window.open(url,'_blank');
 }
 
