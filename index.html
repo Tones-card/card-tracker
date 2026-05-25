@@ -379,27 +379,36 @@ async function fetchFromSheet(){
   setSyncStatus('syncing','loading');
   try{
     const res=await fetch(SCRIPT_URL+'?t='+Date.now());
-    const data=await res.json();
+    const text=await res.text();
+    let data;
+    try{ data=JSON.parse(text); }catch(e){ throw new Error('Invalid JSON from sheet'); }
     if(!Array.isArray(data))throw new Error('bad response');
-    const fetched=data.map(r=>({
-      name:String(r.name||''),set:String(r.set||''),category:String(r.category||'Other'),
-      condition:String(r.condition||'Raw'),buyPrice:parseFloat(r.buyPrice)||0,
-      marketValue:parseFloat(r.marketValue)||0,notes:String(r.notes||''),
-      sold:r.sold==='true'||r.sold===true,
-      salePrice:parseFloat(r.salePrice)||0,
-      addedAt:parseInt(r.addedAt)||Date.now(),
-      photo:r.photo&&String(r.photo).length>200?String(r.photo):null,
-      watch:r.watch==='true'||r.watch===true,
-      event:String(r.event||''),opponent:String(r.opponent||''),
-      targetWin:parseFloat(r.targetWin)||0,targetLose:parseFloat(r.targetLose)||0,
-      comp:String(r.comp||''),
-      priceHistory:r.priceHistory?JSON.parse(String(r.priceHistory)):[]
-    })).filter(c=>c.name.trim());
-    // PRESERVE sold cards: merge sheet data keeping all sold cards
+    const fetched=data.map(r=>{
+      let priceHistory=[];
+      try{
+        const ph=String(r.priceHistory||'');
+        if(ph&&ph.startsWith('['))priceHistory=JSON.parse(ph);
+      }catch(e){}
+      return {
+        name:String(r.name||''),set:String(r.set||''),category:String(r.category||'Other'),
+        condition:String(r.condition||'Raw'),buyPrice:parseFloat(r.buyPrice)||0,
+        marketValue:parseFloat(r.marketValue)||0,notes:String(r.notes||''),
+        sold:r.sold==='true'||r.sold===true,
+        salePrice:parseFloat(r.salePrice)||0,
+        addedAt:parseInt(r.addedAt)||Date.now(),
+        photo:r.photo&&String(r.photo).length>200?String(r.photo):null,
+        watch:r.watch==='true'||r.watch===true,
+        event:String(r.event||''),opponent:String(r.opponent||''),
+        targetWin:parseFloat(r.targetWin)||0,targetLose:parseFloat(r.targetLose)||0,
+        comp:String(r.comp||''),
+        priceHistory
+      };
+    }).filter(c=>c.name.trim());
     cards=fetched;
     saveCache();
     setSyncStatus('synced','synced');
   }catch(e){
+    console.error('Fetch error:',e);
     loadCache();
     setSyncStatus('error','offline — using cache');
   }
@@ -412,10 +421,15 @@ async function pushToSheet(){
   saveTimer=setTimeout(async()=>{
     setSyncStatus('syncing','saving');
     try{
+      // serialize priceHistory as JSON string so sheets can store it
+      const sheetCards=cards.map(c=>({
+        ...c,
+        priceHistory:JSON.stringify(c.priceHistory||[])
+      }));
       const res=await fetch(SCRIPT_URL,{
         method:'POST',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({action:'save',cards})
+        body:JSON.stringify({action:'save',cards:sheetCards})
       });
       const text=await res.text();
       if(text.includes('ok'))setSyncStatus('synced','synced');
