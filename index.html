@@ -409,9 +409,21 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px" id="feeCardName"></div>
     <div class="form-block" style="margin-bottom:12px">
       <div class="form-block-title">Sale details</div>
+      <div class="form-row full" style="margin-bottom:10px">
+        <div class="field"><label>Sold via</label>
+          <select id="feePlatform" onchange="setPlatformFees()">
+            <option value="ebay">eBay</option>
+            <option value="cash">Cash / In person</option>
+            <option value="whatnot">Whatnot</option>
+            <option value="pwcc">PWCC</option>
+            <option value="facebook">Facebook Marketplace</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
       <div class="form-row">
         <div class="field"><label>Sale price ($)</label><input id="feeSalePrice" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcFees()"></div>
-        <div class="field"><label>eBay fee (%)</label><input id="feeEbay" type="number" min="0" step="0.1" value="13" oninput="calcFees()"></div>
+        <div class="field"><label>Platform fee (%)</label><input id="feeEbay" type="number" min="0" step="0.1" value="13" oninput="calcFees()"></div>
       </div>
       <div class="form-row">
         <div class="field"><label>Shipping ($)</label><input id="feeShipping" type="number" min="0" step="0.01" value="4" oninput="calcFees()"></div>
@@ -917,6 +929,7 @@ function openCard(idx){
       <div class="modal-row"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
       <div class="modal-row"><span>Market value</span><span>$${c.marketValue.toFixed(2)}</span></div>
       ${c.sold?`<div class="modal-row"><span>Sold for</span><span>$${c.salePrice.toFixed(2)}</span></div>`:''}
+      ${c.salePlatform?`<div class="modal-row"><span>Sold via</span><span style="text-transform:capitalize">${c.salePlatform==='cash'?'Cash / In person':c.salePlatform==='ebay'?'eBay':c.salePlatform==='whatnot'?'Whatnot':c.salePlatform==='pwcc'?'PWCC':c.salePlatform==='facebook'?'Facebook Marketplace':c.salePlatform}</span></div>`:''}
       ${c.saleFees?`<div class="modal-row"><span>Fees</span><span style="color:var(--red)">-$${c.saleFees.toFixed(2)}</span></div>`:''}
       ${c.saleNet?`<div class="modal-row"><span>Net proceeds</span><span>$${c.saleNet.toFixed(2)}</span></div>`:''}
       <div class="modal-row"><span>${c.sold?'Realized':'Unrealized'} P&L</span><span style="color:${gain>=0?'var(--green)':'var(--red)'};font-family:'DM Mono',monospace">${plStr(gain)}</span></div>
@@ -1045,6 +1058,17 @@ function openFeeModal(idx){
   calcFees();
   document.getElementById('feeModalBg').classList.add('open');
 }
+
+function setPlatformFees(){
+  const p=document.getElementById('feePlatform').value;
+  const fees={ebay:{pct:13,ship:4},cash:{pct:0,ship:0},whatnot:{pct:8,ship:0},pwcc:{pct:10,ship:0},facebook:{pct:0,ship:0},custom:{pct:0,ship:0}};
+  const f=fees[p]||fees.ebay;
+  document.getElementById('feeEbay').value=f.pct;
+  document.getElementById('feeShipping').value=f.ship;
+  document.getElementById('feeOther').value=0;
+  calcFees();
+}
+
 function calcFees(){
   const sale=parseFloat(document.getElementById('feeSalePrice').value)||0;
   const ebayPct=parseFloat(document.getElementById('feeEbay').value)||0;
@@ -1071,6 +1095,7 @@ function confirmSale(){
   const fees=sale*(ebayPct/100)+ship+other;
   cards[feeModalIdx].sold=true;
   cards[feeModalIdx].salePrice=sale;
+  cards[feeModalIdx].salePlatform=document.getElementById('feePlatform').value;
   cards[feeModalIdx].saleFees=parseFloat(fees.toFixed(2));
   cards[feeModalIdx].saleNet=parseFloat((sale-fees).toFixed(2));
   pushToSheet();
