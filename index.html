@@ -1204,7 +1204,37 @@ function clearGrading(){
 
 document.getElementById('gradeModalBg').addEventListener('click',e=>{if(e.target===document.getElementById('gradeModalBg'))closeGradeModal();});
 
-loadCache();renderDashboard();fetchFromSheet();
+// SETTINGS — GEMINI KEY (stored privately in browser only)
+function saveGeminiKey(){
+  const key=document.getElementById('geminiKeyInput').value.trim();
+  if(!key||!key.startsWith('AIza')){showKeyStatus('error','Invalid key — should start with AIza...');return;}
+  localStorage.setItem('gemini_key',key);
+  document.getElementById('geminiKeyInput').value='';
+  document.getElementById('geminiKeyInput').placeholder='Key saved — paste new key to update';
+  showKeyStatus('success','✅ Key saved! AI scan and price estimate are now active.');
+  updateKeyBadge();
+}
+function showKeyStatus(type,msg){
+  const el=document.getElementById('keyStatus');if(!el)return;
+  el.style.cssText=`display:block;padding:10px 12px;border-radius:var(--r-sm);font-size:13px;margin-top:8px;background:${type==='success'?'var(--green-dim)':'var(--red-dim)'};color:${type==='success'?'var(--green)':'var(--red)'}`;
+  el.textContent=msg;
+}
+function updateKeyBadge(){
+  const badge=document.getElementById('keyStatusBadge');if(!badge)return;
+  const key=localStorage.getItem('gemini_key');
+  if(key&&key.startsWith('AIza')){badge.textContent='✅ Key saved';badge.style.color='var(--green)';}
+  else{badge.textContent='⚠️ No key set';badge.style.color='var(--amber)';}
+}
+function renderSettingsTab(){
+  updateKeyBadge();
+  const el=document.getElementById('keyStatus');if(el)el.style.display='none';
+  const key=localStorage.getItem('gemini_key');
+  const input=document.getElementById('geminiKeyInput');
+  if(input)input.placeholder=key?'Key saved — paste new key to update':'Paste your key here — AIzaSy...';
+}
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+loadCache();renderDashboard();fetchFromSheet();updateKeyBadge();
 </script>
 </body>
 </html>
