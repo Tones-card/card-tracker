@@ -225,6 +225,22 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
 .theme-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .1s;flex-shrink:0}
 .theme-swatch.active{border-color:var(--text);transform:scale(1.1)}
 .theme-swatch:hover{transform:scale(1.08)}
+
+.countdown-block{background:rgba(255,171,64,0.08);border:1px solid rgba(255,171,64,0.2);border-radius:var(--r-sm);padding:12px;margin-top:10px}
+.countdown-title{font-size:11px;font-weight:600;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;font-family:'DM Mono',monospace}
+.countdown-timer{display:flex;gap:8px;margin-bottom:8px}
+.cd-unit{background:var(--surface2);border-radius:var(--r-sm);padding:8px 10px;text-align:center;flex:1}
+.cd-num{font-size:20px;font-weight:600;font-family:'DM Mono',monospace;color:var(--amber)}
+.cd-label{font-size:10px;color:var(--text2);margin-top:2px}
+.cd-advice{font-size:12px;color:var(--text2);line-height:1.5}
+.grade-compare-block{background:var(--surface2);border-radius:var(--r-sm);padding:12px;margin-top:10px}
+.grade-compare-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-family:'DM Mono',monospace}
+.grade-result{border-radius:var(--r-sm);padding:12px;margin-top:8px;line-height:1.6;font-size:13px}
+.grade-result.loading{background:var(--surface);color:var(--text2)}
+.grade-result.done{background:var(--green-dim);color:var(--green)}
+.grade-result.error{background:var(--red-dim);color:var(--red)}
+.grade-badge{font-size:28px;font-weight:700;font-family:'DM Mono',monospace;margin-bottom:6px}
+.grade-details{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -1037,6 +1053,18 @@ function openCard(idx){
       <input class="quick-val-input" id="quickValInput" type="number" min="0" step="0.01" value="${c.marketValue.toFixed(2)}">
       <button class="quick-val-btn" onclick="quickUpdateValue(${idx})">Save</button>
     </div>
+    <div class="countdown-block" id="cdBlock_${idx}" style="display:${c.watch&&c.event?'block':'none'}">
+      <div class="countdown-title">⏰ Best time to list</div>
+      <div class="countdown-timer" id="cdTimer_${idx}"></div>
+      <div class="cd-advice" id="cdAdvice_${idx}"></div>
+    </div>
+
+    <div class="grade-compare-block">
+      <div class="grade-compare-title">🔍 Condition grade estimate</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">AI compares your card photo against PSA grading standards</div>
+      ${c.photo?`<button class="btn btn-outline" style="width:100%;padding:9px;font-size:13px" onclick="estimateGrade(${idx})">Estimate PSA grade from photo</button><div class="grade-result" id="gradeResult_${idx}"></div>`:'<div style="font-size:12px;color:var(--text3)">Add a photo to this card to use grade estimation</div>'}
+    </div>
+
     <div class="btn-row" style="margin-top:14px">
       <a href="${clUrl}" target="_blank" style="text-decoration:none"><button class="btn btn-blue">Card Ladder</button></a>
       <a href="${ebayUrl}" target="_blank" style="text-decoration:none"><button class="btn btn-blue">${c.comp?'eBay (filtered)':'eBay comps'}</button></a>
@@ -1048,6 +1076,7 @@ function openCard(idx){
       <button class="btn btn-outline" onclick="closeModal()">Close</button>
     </div>`;
   document.getElementById('modalBg').classList.add('open');
+  if(c.watch&&c.event)startCountdown(idx,c.event);
 }
 
 function closeModal(){document.getElementById('modalBg').classList.remove('open');}
@@ -1629,6 +1658,140 @@ function loadTheme(){
   applyTheme();
 }
 function setTheme(t){setBg(t);}
+
+
+// BEST TIME TO LIST — COUNTDOWN
+function startCountdown(idx, eventStr){
+  const timerEl=document.getElementById('cdTimer_'+idx);
+  const adviceEl=document.getElementById('cdAdvice_'+idx);
+  if(!timerEl||!adviceEl)return;
+
+  // Try to parse the event date from the string
+  const now=new Date();
+  let eventDate=null;
+  // Try parsing various formats
+  const parsed=new Date(eventStr);
+  if(!isNaN(parsed.getTime())&&parsed>now)eventDate=parsed;
+  // Try extracting month+day patterns like "May 10" or "UFC 315 May 10"
+  if(!eventDate){
+    const match=eventStr.match(/([A-Za-z]+)\s+(\d{1,2})/);
+    if(match){
+      const attempt=new Date(match[1]+' '+match[2]+' '+now.getFullYear());
+      if(!isNaN(attempt.getTime())){
+        if(attempt<now)attempt.setFullYear(now.getFullYear()+1);
+        eventDate=attempt;
+      }
+    }
+  }
+
+  function renderCountdown(){
+    if(!eventDate){
+      timerEl.innerHTML='';
+      adviceEl.textContent='Set a specific date in the event field (e.g. "May 10 2025") for countdown.';
+      return;
+    }
+    const diff=eventDate-new Date();
+    if(diff<=0){
+      timerEl.innerHTML='';
+      adviceEl.innerHTML='<strong style="color:var(--green)">Event has passed</strong> — check current prices and decide whether to hold or sell now.';
+      return;
+    }
+    const days=Math.floor(diff/(1000*60*60*24));
+    const hrs=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+    const mins=Math.floor((diff%(1000*60*60))/(1000*60));
+    timerEl.innerHTML=`
+      <div class="cd-unit"><div class="cd-num">${days}</div><div class="cd-label">days</div></div>
+      <div class="cd-unit"><div class="cd-num">${hrs}</div><div class="cd-label">hrs</div></div>
+      <div class="cd-unit"><div class="cd-num">${mins}</div><div class="cd-label">mins</div></div>`;
+
+    let advice='';
+    if(days>14)advice='<strong>Hold</strong> — still plenty of time before the event. List 5-7 days before for peak visibility.';
+    else if(days>7)advice='<strong>Getting close</strong> — start watching comps daily. List in the next few days for best exposure.';
+    else if(days>3)advice='<strong>List now</strong> — this is the sweet spot. Buyer interest peaks 3-7 days before a fight or game.';
+    else if(days>0)advice='<strong>Last chance</strong> — list immediately. Prices are at peak but dropping fast after the event.';
+    adviceEl.innerHTML=advice;
+  }
+
+  renderCountdown();
+  const timer=setInterval(()=>{
+    if(!document.getElementById('cdTimer_'+idx)){clearInterval(timer);return;}
+    renderCountdown();
+  },60000);
+}
+
+// CONDITION GRADE ESTIMATOR
+async function estimateGrade(idx){
+  const c=cards[idx];
+  if(!c.photo){showToast('No photo on this card');return;}
+  const resultEl=document.getElementById('gradeResult_'+idx);
+  if(!resultEl)return;
+  resultEl.className='grade-result loading';
+  resultEl.innerHTML='<span class="spin">◌</span> Analyzing card condition…';
+
+  const API_KEY=localStorage.getItem('anthropic_key')||localStorage.getItem('gemini_key')||'';
+  if(!API_KEY){resultEl.className='grade-result error';resultEl.textContent='No API key — add your Claude key in Settings.';return;}
+
+  const b64=c.photo.split(',')[1];
+  const mime=c.photo.split(';')[0].split(':')[1]||'image/jpeg';
+  const valid=['image/jpeg','image/png','image/gif','image/webp'];
+  const m=valid.includes(mime)?mime:'image/jpeg';
+
+  const prompt=`You are a PSA/BGS card grading expert with years of experience grading sports and trading cards. Carefully examine this card photo and provide a detailed condition assessment.
+
+Respond with a JSON object:
+{
+  "estimatedGrade": "PSA grade number e.g. 9.5 or 8 or 7",
+  "gradeLabel": "label like PSA 9 Mint or PSA 8 Near Mint",
+  "centering": "assessment of centering e.g. 60/40 left-right, well centered",
+  "corners": "corner condition e.g. sharp, slight wear on one corner",
+  "edges": "edge condition e.g. clean, minor chipping",
+  "surface": "surface condition e.g. clean gloss, light scratches",
+  "majorIssues": "any major defects visible or none",
+  "sellAdvice": "one sentence on how this grade affects value",
+  "confidence": "high medium or low based on photo quality"
+}
+Be specific and honest. If the photo is unclear say so in confidence field.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:m,data:b64}},{type:'text',text:prompt}]}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const raw=data.content?.map(b=>b.text||'').join('')||'';
+    const match=raw.match(/\{[\s\S]*\}/);if(!match)throw new Error('No JSON');
+    const g=JSON.parse(match[0]);
+    resultEl.className='grade-result done';
+    resultEl.innerHTML=`
+      <div class="grade-badge">${g.gradeLabel||'PSA '+g.estimatedGrade}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0">
+        <div style="background:var(--surface);border-radius:var(--r-sm);padding:8px">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">CENTERING</div>
+          <div style="font-size:12px;color:var(--text)">${g.centering||'—'}</div>
+        </div>
+        <div style="background:var(--surface);border-radius:var(--r-sm);padding:8px">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">CORNERS</div>
+          <div style="font-size:12px;color:var(--text)">${g.corners||'—'}</div>
+        </div>
+        <div style="background:var(--surface);border-radius:var(--r-sm);padding:8px">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">EDGES</div>
+          <div style="font-size:12px;color:var(--text)">${g.edges||'—'}</div>
+        </div>
+        <div style="background:var(--surface);border-radius:var(--r-sm);padding:8px">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">SURFACE</div>
+          <div style="font-size:12px;color:var(--text)">${g.surface||'—'}</div>
+        </div>
+      </div>
+      ${g.majorIssues&&g.majorIssues.toLowerCase()!=='none'?`<div style="background:var(--red-dim);border-radius:var(--r-sm);padding:8px;font-size:12px;color:var(--red);margin-bottom:8px">⚠️ ${g.majorIssues}</div>`:''}
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">${g.sellAdvice||''}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">Confidence: ${g.confidence||'medium'} · AI estimate only, not a substitute for professional grading</div>`;
+  }catch(e){
+    resultEl.className='grade-result error';
+    resultEl.textContent='Grade estimate failed: '+e.message.slice(0,80);
+  }
+}
 
 // SETTINGS — GEMINI KEY (stored privately in browser only)
 function saveGeminiKey(){
