@@ -251,6 +251,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       </div>
       <div class="form-row"><div class="field"><label>Buy price ($)</label><input id="f-buy" type="number" min="0" step="0.01" placeholder="0.00"></div><div class="field"><label>Market value ($)</label><input id="f-val" type="number" min="0" step="0.01" placeholder="0.00"></div></div>
       <div class="form-row full"><div class="field"><label>Notes (parallel, serial #, RC, auto...)</label><input id="f-notes" placeholder="e.g. Silver Prizm /99"></div></div>
+      <div class="form-row full"><div class="field"><label>Pull source (box/pack info)</label><input id="f-pull" placeholder="e.g. 2024 Bowman Hobby Box, Topps Series 1 Blaster"></div></div>
 
       <!-- CARD LADDER LOOKUP -->
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-top:4px;margin-bottom:4px">
@@ -395,6 +396,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       </div>
       <div class="form-row"><div class="field"><label>Buy price ($)</label><input id="e-buy" type="number" min="0" step="0.01"></div><div class="field"><label>Market value ($)</label><input id="e-val" type="number" min="0" step="0.01"></div></div>
       <div class="form-row full"><div class="field"><label>Notes</label><input id="e-notes"></div></div>
+      <div class="form-row full"><div class="field"><label>Pull source (box/pack info)</label><input id="e-pull" placeholder="e.g. 2024 Bowman Hobby Box"></div></div>
       <div class="form-row full"><div class="field"><label>Sale price ($) — fill in if sold</label><input id="e-sale" type="number" min="0" step="0.01" placeholder="Leave blank if still holding"></div></div>
 
       <!-- CARD LADDER LOOKUP IN EDIT -->
@@ -481,6 +483,7 @@ async function fetchFromSheet(){
       targetWin:parseFloat(r.targetWin)||0,
       targetLose:parseFloat(r.targetLose)||0,
       comp:String(r.comp||''),
+      pull:String(r.pull||''),
       priceHistory:safeParseHistory(r.priceHistory),
       grading:safeParseObj(r.grading)
     })).filter(c=>c.name.trim());
@@ -502,6 +505,7 @@ function buildSheetCards(){
     sold:c.sold,salePrice:c.salePrice,addedAt:c.addedAt,photo:c.photo||'',
     watch:c.watch||false,event:c.event||'',opponent:c.opponent||'',
     targetWin:c.targetWin||0,targetLose:c.targetLose||0,comp:c.comp||'',
+    pull:c.pull||'',
     priceHistory:JSON.stringify(c.priceHistory||[]),
     grading:c.grading?JSON.stringify(c.grading):''
   }));
@@ -589,6 +593,7 @@ function renderCollection(){
       <div class="card-pl" style="color:${gain>=0?'var(--green)':'var(--red)'}">${plStr(gain)}</div>
       ${targetHit?`<div class="card-target-hit">🎯 target hit!</div>`:''}
       ${c.watch&&c.event&&!targetHit?`<div class="card-event">${c.event}</div>`:''}
+      ${c.pull?`<div style="font-size:10px;color:var(--amber);margin-top:3px">📦 ${c.pull}</div>`:''}
       ${c.grading?`<div style="font-size:10px;margin-top:4px;color:${c.grading.status==='done'?'var(--green)':c.grading.status==='grading'?'var(--amber)':'var(--blue)'}">🏅 ${c.grading.status==='done'?c.grading.company+' '+c.grading.grade:c.grading.status==='grading'?'At grader':'Sent to '+c.grading.company}</div>`:''}
     </div></div>`;
   }).join('');
@@ -712,7 +717,7 @@ function addCard(){
   const buy=parseFloat(document.getElementById('f-buy').value);
   const val=parseFloat(document.getElementById('f-val').value);
   if(!name||isNaN(buy)||isNaN(val)){showToast('Fill in name, buy price, and market value');return;}
-  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null});
+  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),pull:document.getElementById('f-pull').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null});
   pushToSheet();clearForm();showToast('Card added — syncing!');showTab('collection');
 }
 
@@ -730,6 +735,7 @@ function clearForm(){
   document.getElementById('bc-price').value='';
   document.getElementById('bc-cards').value='';
   document.getElementById('bc-result').textContent='—';
+  document.getElementById('f-pull').value='';
 }
 
 function openCard(idx){
@@ -768,6 +774,7 @@ function openCard(idx){
       <div class="modal-row"><span>Set</span><span>${c.set||'—'}</span></div>
       <div class="modal-row"><span>Condition</span><span>${c.condition}</span></div>
       ${c.notes?`<div class="modal-row"><span>Notes</span><span>${c.notes}</span></div>`:''}
+      ${c.pull?`<div class="modal-row"><span>Pull source</span><span style="color:var(--amber)">${c.pull}</span></div>`:''}
       ${c.grading?`<div class="modal-row"><span>Grading</span><span style="color:${c.grading.status==='done'?'var(--green)':c.grading.status==='grading'?'var(--amber)':'var(--blue)'}">${c.grading.company} — ${c.grading.status==='sent'?'Sent to grader':c.grading.status==='grading'?'At grader':'Grade: '+c.grading.grade}</span></div>`:''}
       ${c.grading&&c.grading.fee>0?`<div class="modal-row"><span>Grading fee</span><span>$${c.grading.fee.toFixed(2)}</span></div>`:''}
       <div class="modal-row"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
@@ -817,6 +824,7 @@ function openEditModal(idx){
   document.getElementById('e-twin').value=c.targetWin||'';
   document.getElementById('e-tlose').value=c.targetLose||'';
   document.getElementById('e-comp').value=c.comp||'';
+  document.getElementById('e-pull').value=c.pull||'';
   // pre-fill Card Ladder URL
   const clUrl=c.comp?buildCLUrl(c.name,c.set,c.condition,c.comp):buildCLUrl(c.name,c.set,c.condition,c.notes);
   document.getElementById('e-clurl').value=clUrl;
@@ -867,6 +875,7 @@ function saveEdit(){
     targetWin:parseFloat(document.getElementById('e-twin').value)||0,
     targetLose:parseFloat(document.getElementById('e-tlose').value)||0,
     comp:document.getElementById('e-comp').value.trim(),
+    pull:document.getElementById('e-pull').value.trim(),
     priceHistory:history
   };
   pushToSheet();closeEditModal();showToast('Card updated — syncing!');
@@ -912,7 +921,8 @@ function importJSON(e){
       imported.forEach(c=>{
         const k=c.name+'|'+(c.addedAt||'');
         if(!existing.has(k)){
-          cards.push({...c,watch:c.watch||false,event:c.event||'',opponent:c.opponent||'',targetWin:c.targetWin||0,targetLose:c.targetLose||0,comp:c.comp||'',priceHistory:c.priceHistory||[]});
+          cards.push({...c,watch:c.watch||false,event:c.event||'',opponent:c.opponent||'',targetWin:c.targetWin||0,targetLose:c.targetLose||0,comp:c.comp||'',
+    pull:c.pull||'',priceHistory:c.priceHistory||[]});
           added++;existing.add(k);
         }
       });
@@ -943,9 +953,7 @@ function applyBoxCost(){
   if(isNaN(p)||isNaN(n)||n<=0){showToast('Enter box price and card count first');return;}
   const per=(p/n).toFixed(2);
   document.getElementById('f-buy').value=per;
-  const ex=document.getElementById('f-notes').value.trim();
-  const note=`Box pull ($${p} ÷ ${n} cards)`;
-  if(!ex.includes('Box pull'))document.getElementById('f-notes').value=ex?ex+', '+note:note;
+  document.getElementById('f-pull').value=`$${p} box ÷ ${n} cards = $${per} each`;
   showToast('Buy price set to $'+per);
 }
 
