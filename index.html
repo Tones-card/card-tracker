@@ -189,6 +189,24 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .grade-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:none;align-items:flex-end;justify-content:center}
 .grade-modal-bg.open{display:flex}
 .grade-modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r) var(--r) 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;padding:20px}
+
+.sort-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.sort-row::-webkit-scrollbar{display:none}
+.sort-btn{flex-shrink:0;padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all .12s}
+.sort-btn.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.fee-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border)}
+.fee-row:last-child{border-bottom:none}
+.fee-row span:first-child{color:var(--text2)}
+.fee-row strong{font-family:'DM Mono',monospace}
+.fee-total{display:flex;justify-content:space-between;font-size:14px;font-weight:600;padding:10px 0 0;margin-top:4px;border-top:2px solid var(--border2)}
+.fee-total span:first-child{color:var(--text)}
+.public-link-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);word-break:break-all;margin:10px 0;cursor:pointer;transition:border-color .15s}
+.public-link-box:hover{border-color:var(--border2)}
+.public-view{max-width:600px;margin:0 auto;padding:20px 16px 40px;font-family:'DM Sans',sans-serif}
+.public-header{text-align:center;margin-bottom:24px}
+.public-title{font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
+.public-sub{font-size:14px;color:var(--text2)}
+.public-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
 </style>
 </head>
 <body>
@@ -211,6 +229,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="search" id="collSearch" placeholder="Search player, set, notes..." oninput="renderCollection()">
     </div>
+    <div class="sort-row" id="sortRow"></div>
     <div class="filters" id="filters"></div>
     <div class="card-grid" id="cardGrid"></div>
   </div>
@@ -246,7 +265,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <div style="height:12px"></div>
       <div class="form-row"><div class="field"><label>Player / Card name</label><input id="f-name" placeholder="Mike Trout"></div><div class="field"><label>Year &amp; Set</label><input id="f-set" placeholder="2011 Topps Update"></div></div>
       <div class="form-row">
-        <div class="field"><label>Category</label><select id="f-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>UFC</option><option>Pokemon</option><option>Other</option></select></div>
+        <div class="field"><label>Category</label><select id="f-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>UFC</option><option>Pokemon</option><option>Yu-Gi-Oh!</option><option>Marvel</option><option>Disney</option><option>Other</option></select></div>
         <div class="field"><label>Condition</label><select id="f-cond"><option>Raw</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>BGS 9.5</option><option>BGS 9</option><option>Other graded</option></select></div>
       </div>
       <div class="form-row"><div class="field"><label>Buy price ($)</label><input id="f-buy" type="number" min="0" step="0.01" placeholder="0.00"></div><div class="field"><label>Market value ($)</label><input id="f-val" type="number" min="0" step="0.01" placeholder="0.00"></div></div>
@@ -342,6 +361,25 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <div class="bcard"><h3>Import JSON</h3><p>Restore from backup.</p><button class="btn btn-outline" style="width:100%;padding:9px" onclick="document.getElementById('importInput').click()">Import</button><input type="file" id="importInput" accept=".json" style="display:none" onchange="importJSON(event)"></div>
       <div class="bcard full"><h3>Export CSV</h3><p>Open in Google Sheets or Excel.</p><button class="btn btn-outline" onclick="exportCSV()">Download CSV</button></div>
     </div>
+    <div class="form-block" style="margin-bottom:14px">
+      <div class="form-block-title">🌐 Public collection link</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.5">Share a read-only view of your collection. Anyone with the link can browse your cards — they cannot edit anything.</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <select id="publicFilter" style="flex:1;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:13px;outline:none">
+          <option value="all">Show all cards</option>
+          <option value="holding">Holding only</option>
+          <option value="sold">Sold only</option>
+        </select>
+        <button class="btn btn-green" onclick="generatePublicLink()" style="flex-shrink:0;padding:9px 16px">Generate link</button>
+      </div>
+      <div id="publicLinkBox" style="display:none">
+        <div class="public-link-box" id="publicLinkText" onclick="copyPublicLink()">Tap to copy link</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-blue" style="flex:1;padding:9px" onclick="copyPublicLink()">📋 Copy link</button>
+          <button class="btn btn-outline" style="flex:1;padding:9px" onclick="openPublicLink()">👁 Preview</button>
+        </div>
+      </div>
+    </div>
     <div class="stats-block"><div class="slabel">Summary</div><div id="backupStats"></div></div>
     <div class="danger-zone"><h3>Danger zone</h3><p>Delete all cards. Cannot be undone.</p><button class="btn btn-red" onclick="clearAll()">Delete all data</button></div>
   </div>
@@ -360,6 +398,39 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 <!-- VIEW MODAL -->
 <div class="modal-bg" id="modalBg">
   <div class="modal"><div id="modal-content"></div></div>
+</div>
+
+
+<!-- FEE CALCULATOR MODAL -->
+<div class="grade-modal-bg" id="feeModalBg">
+  <div class="grade-modal">
+    <div class="modal-handle"></div>
+    <div style="font-size:16px;font-weight:600;margin-bottom:4px">Mark as sold</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px" id="feeCardName"></div>
+    <div class="form-block" style="margin-bottom:12px">
+      <div class="form-block-title">Sale details</div>
+      <div class="form-row">
+        <div class="field"><label>Sale price ($)</label><input id="feeSalePrice" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcFees()"></div>
+        <div class="field"><label>eBay fee (%)</label><input id="feeEbay" type="number" min="0" step="0.1" value="13" oninput="calcFees()"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Shipping ($)</label><input id="feeShipping" type="number" min="0" step="0.01" value="4" oninput="calcFees()"></div>
+        <div class="field"><label>Other fees ($)</label><input id="feeOther" type="number" min="0" step="0.01" value="0" oninput="calcFees()"></div>
+      </div>
+    </div>
+    <div class="form-block" style="margin-bottom:12px">
+      <div class="form-block-title">Breakdown</div>
+      <div class="fee-row"><span>eBay fees</span><strong id="feeBreakEbay">-$0.00</strong></div>
+      <div class="fee-row"><span>Shipping</span><strong id="feeBreakShip">-$0.00</strong></div>
+      <div class="fee-row"><span>Other</span><strong id="feeBreakOther">$0.00</strong></div>
+      <div class="fee-row"><span>Net proceeds</span><strong id="feeBreakNet">$0.00</strong></div>
+      <div class="fee-total"><span>True profit</span><strong id="feeBreakProfit">$0.00</strong></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="confirmSale()">Confirm sale</button>
+      <button class="btn btn-outline" onclick="document.getElementById('feeModalBg').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- GRADE DETAIL MODAL -->
@@ -420,7 +491,7 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
       <div class="form-block-title">Card details</div>
       <div class="form-row"><div class="field"><label>Player / Card name</label><input id="e-name"></div><div class="field"><label>Year &amp; Set</label><input id="e-set"></div></div>
       <div class="form-row">
-        <div class="field"><label>Category</label><select id="e-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>UFC</option><option>Pokemon</option><option>Other</option></select></div>
+        <div class="field"><label>Category</label><select id="e-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>UFC</option><option>Pokemon</option><option>Yu-Gi-Oh!</option><option>Marvel</option><option>Disney</option><option>Other</option></select></div>
         <div class="field"><label>Condition</label><select id="e-cond"><option>Raw</option><option>PSA 10</option><option>PSA 9</option><option>PSA 8</option><option>BGS 9.5</option><option>BGS 9</option><option>Other graded</option></select></div>
       </div>
       <div class="form-row"><div class="field"><label>Buy price ($)</label><input id="e-buy" type="number" min="0" step="0.01"></div><div class="field"><label>Market value ($)</label><input id="e-val" type="number" min="0" step="0.01"></div></div>
@@ -576,10 +647,10 @@ function showTab(tab){
   if(tab==='settings')renderSettingsTab();
 }
 
-function catBadge(c){return c==='Pokemon'?'badge-pokemon':c==='UFC'?'badge-ufc':'badge-sports';}
-function pl(c){return c.sold?(c.salePrice-c.buyPrice):(c.marketValue-c.buyPrice);}
+function catBadge(c){return c==='Pokemon'||c==='Yu-Gi-Oh!'||c==='Marvel'||c==='Disney'?'badge-pokemon':c==='UFC'?'badge-ufc':'badge-sports';}
+function pl(c){if(c.sold)return(c.saleNet||c.salePrice)-c.buyPrice;return c.marketValue-c.buyPrice;}
 function plStr(v){return(v>=0?'+':'-')+'$'+Math.abs(v).toFixed(2);}
-function catEmoji(cat){return{Baseball:'⚾',Basketball:'🏀',Football:'🏈',Hockey:'🏒',Soccer:'⚽',UFC:'🥊',Pokemon:'✦',Other:'🃏'}[cat]||'🃏';}
+function catEmoji(cat){return{Baseball:'⚾',Basketball:'🏀',Football:'🏈',Hockey:'🏒',Soccer:'⚽',UFC:'🥊',Pokemon:'✦','Yu-Gi-Oh!':'🐉',Marvel:'⚡',Disney:'✨',Other:'🃏'}[cat]||'🃏';}
 
 function renderDashboard(){
   const held=cards.filter(c=>!c.sold),sold=cards.filter(c=>c.sold);
@@ -602,12 +673,14 @@ function renderDashboard(){
 }
 
 function renderCollection(){
+  renderSortRow();
   const q=(document.getElementById('collSearch')?.value||'').toLowerCase();
   const held=cards.filter(c=>!c.sold);
   const cats=['All',...new Set(held.map(c=>c.category))];
   document.getElementById('filters').innerHTML=cats.map(c=>`<button class="filter-btn ${c===activeFilter?'active':''}" onclick="setFilter('${c}')">${c}</button>`).join('');
   let f=activeFilter==='All'?held:held.filter(c=>c.category===activeFilter);
   if(q)f=f.filter(c=>c.name.toLowerCase().includes(q)||(c.set||'').toLowerCase().includes(q)||c.category.toLowerCase().includes(q)||(c.notes||'').toLowerCase().includes(q));
+  f=sortCards(f);
   if(!f.length){document.getElementById('cardGrid').innerHTML=`<div class="empty">${q?'No cards match':'No cards yet — add your first one!'}</div>`;return;}
   document.getElementById('cardGrid').innerHTML=f.map(c=>{
     const idx=cards.indexOf(c),gain=pl(c);
@@ -645,6 +718,7 @@ function renderSold(){
       <div class="card-set">${c.set||''}</div>
       <div class="card-stats"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
       <div class="card-stats"><span>Sold</span><span>$${c.salePrice.toFixed(2)}</span></div>
+      ${c.saleFees?`<div class="card-stats"><span>Net</span><span style="color:var(--green)">$${c.saleNet.toFixed(2)}</span></div>`:''}
       <div class="card-pl" style="color:${gain>=0?'var(--green)':'var(--red)'}">${plStr(gain)} realized</div>
     </div></div>`;
   }).join('');
@@ -715,7 +789,7 @@ Use Raw for condition unless you can clearly see a PSA or BGS grading label on a
   if(p.name?.trim()){document.getElementById(ids.name).value=p.name.trim();filled.push('name');}
   if(p.set?.trim()){document.getElementById(ids.set).value=p.set.trim();filled.push('set');}
   else if(p.year?.trim()){document.getElementById(ids.set).value=p.year.trim();}
-  const cats=['Baseball','Basketball','Football','Hockey','Soccer','UFC','Pokemon','Other'];
+  const cats=['Baseball','Basketball','Football','Hockey','Soccer','UFC','Pokemon','Yu-Gi-Oh!','Marvel','Disney','Other'];
   if(cats.includes(p.category)){document.getElementById(ids.cat).value=p.category;filled.push('category');}
   const conds=['Raw','PSA 10','PSA 9','PSA 8','BGS 9.5','BGS 9','Other graded'];
   if(conds.includes(p.condition)){document.getElementById(ids.cond).value=p.condition;filled.push('condition');}
@@ -843,6 +917,8 @@ function openCard(idx){
       <div class="modal-row"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
       <div class="modal-row"><span>Market value</span><span>$${c.marketValue.toFixed(2)}</span></div>
       ${c.sold?`<div class="modal-row"><span>Sold for</span><span>$${c.salePrice.toFixed(2)}</span></div>`:''}
+      ${c.saleFees?`<div class="modal-row"><span>Fees</span><span style="color:var(--red)">-$${c.saleFees.toFixed(2)}</span></div>`:''}
+      ${c.saleNet?`<div class="modal-row"><span>Net proceeds</span><span>$${c.saleNet.toFixed(2)}</span></div>`:''}
       <div class="modal-row"><span>${c.sold?'Realized':'Unrealized'} P&L</span><span style="color:${gain>=0?'var(--green)':'var(--red)'};font-family:'DM Mono',monospace">${plStr(gain)}</span></div>
     </div>
     ${watchHtml}
@@ -954,9 +1030,54 @@ function deleteFromEdit(){
 }
 
 function markSold(idx){
-  const p=parseFloat(prompt('Sale price ($)?'));if(isNaN(p))return;
-  cards[idx].sold=true;cards[idx].salePrice=p;
-  pushToSheet();closeModal();showToast('Marked sold!');renderCollection();renderSold();renderDashboard();
+  openFeeModal(idx);
+}
+
+let feeModalIdx=-1;
+function openFeeModal(idx){
+  feeModalIdx=idx;
+  const c=cards[idx];
+  document.getElementById('feeCardName').textContent=c.name;
+  document.getElementById('feeSalePrice').value='';
+  document.getElementById('feeEbay').value='13';
+  document.getElementById('feeShipping').value='4';
+  document.getElementById('feeOther').value='0';
+  calcFees();
+  document.getElementById('feeModalBg').classList.add('open');
+}
+function calcFees(){
+  const sale=parseFloat(document.getElementById('feeSalePrice').value)||0;
+  const ebayPct=parseFloat(document.getElementById('feeEbay').value)||0;
+  const ship=parseFloat(document.getElementById('feeShipping').value)||0;
+  const other=parseFloat(document.getElementById('feeOther').value)||0;
+  const ebayFee=sale*(ebayPct/100);
+  const totalFees=ebayFee+ship+other;
+  const net=sale-totalFees;
+  const cost=feeModalIdx>=0?cards[feeModalIdx].buyPrice:0;
+  const profit=net-cost;
+  document.getElementById('feeBreakEbay').textContent='-$'+ebayFee.toFixed(2);
+  document.getElementById('feeBreakShip').textContent='-$'+ship.toFixed(2);
+  document.getElementById('feeBreakOther').textContent=other>0?'-$'+other.toFixed(2):'$0.00';
+  document.getElementById('feeBreakNet').textContent='$'+net.toFixed(2);
+  document.getElementById('feeBreakProfit').textContent=(profit>=0?'+':'')+' $'+profit.toFixed(2);
+  document.getElementById('feeBreakProfit').style.color=profit>=0?'var(--green)':'var(--red)';
+}
+function confirmSale(){
+  const sale=parseFloat(document.getElementById('feeSalePrice').value);
+  if(isNaN(sale)||sale<=0){showToast('Enter a sale price');return;}
+  const ebayPct=parseFloat(document.getElementById('feeEbay').value)||0;
+  const ship=parseFloat(document.getElementById('feeShipping').value)||0;
+  const other=parseFloat(document.getElementById('feeOther').value)||0;
+  const fees=sale*(ebayPct/100)+ship+other;
+  cards[feeModalIdx].sold=true;
+  cards[feeModalIdx].salePrice=sale;
+  cards[feeModalIdx].saleFees=parseFloat(fees.toFixed(2));
+  cards[feeModalIdx].saleNet=parseFloat((sale-fees).toFixed(2));
+  pushToSheet();
+  document.getElementById('feeModalBg').classList.remove('open');
+  closeModal();
+  showToast('Marked sold — net $'+(sale-fees).toFixed(2));
+  renderCollection();renderSold();renderDashboard();
 }
 
 function exportJSON(){
@@ -1217,6 +1338,102 @@ function clearGrading(){
 
 document.getElementById('gradeModalBg').addEventListener('click',e=>{if(e.target===document.getElementById('gradeModalBg'))closeGradeModal();});
 
+
+// SORT
+let activeSort='date';
+const sortOptions=[
+  {key:'date',label:'Recent'},
+  {key:'value',label:'Most valuable'},
+  {key:'gain',label:'Biggest gain'},
+  {key:'loss',label:'Biggest loss'},
+  {key:'name',label:'A-Z'},
+];
+function renderSortRow(){
+  const row=document.getElementById('sortRow');
+  if(!row)return;
+  row.innerHTML=sortOptions.map(s=>`<button class="sort-btn ${s.key===activeSort?'active':''}" onclick="setSort('${s.key}')">${s.label}</button>`).join('');
+}
+function setSort(s){activeSort=s;renderCollection();}
+function sortCards(arr){
+  const a=[...arr];
+  if(activeSort==='value')return a.sort((x,y)=>y.marketValue-x.marketValue);
+  if(activeSort==='gain')return a.sort((x,y)=>pl(y)-pl(x));
+  if(activeSort==='loss')return a.sort((x,y)=>pl(x)-pl(y));
+  if(activeSort==='name')return a.sort((x,y)=>x.name.localeCompare(y.name));
+  return a.sort((x,y)=>(y.addedAt||0)-(x.addedAt||0));
+}
+
+// PUBLIC COLLECTION LINK
+function generatePublicLink(){
+  const filter=document.getElementById('publicFilter').value;
+  const filtered=filter==='holding'?cards.filter(c=>!c.sold):filter==='sold'?cards.filter(c=>c.sold):cards;
+  // encode just the data we want public (no photos to keep URL reasonable, no keys)
+  const pub=filtered.map(c=>({
+    name:c.name,set:c.set,category:c.category,condition:c.condition,
+    notes:c.notes,marketValue:c.marketValue,sold:c.sold,
+    salePrice:c.salePrice,saleNet:c.saleNet,buyPrice:c.buyPrice,
+    photo:c.photo||null
+  }));
+  const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(pub))));
+  const url=window.location.origin+window.location.pathname+'?view='+encoded;
+  document.getElementById('publicLinkText').textContent=url;
+  document.getElementById('publicLinkBox').style.display='block';
+}
+function copyPublicLink(){
+  const url=document.getElementById('publicLinkText').textContent;
+  navigator.clipboard.writeText(url).then(()=>showToast('Link copied!')).catch(()=>{
+    const t=document.getElementById('publicLinkText');
+    const range=document.createRange();range.selectNode(t);
+    window.getSelection().removeAllRanges();window.getSelection().addRange(range);
+    showToast('Long-press to copy');
+  });
+}
+function openPublicLink(){
+  const url=document.getElementById('publicLinkText').textContent;
+  window.open(url,'_blank');
+}
+
+// PUBLIC VIEW — render if ?view= param present
+function checkPublicView(){
+  const params=new URLSearchParams(window.location.search);
+  const view=params.get('view');
+  if(!view)return false;
+  try{
+    const pub=JSON.parse(decodeURIComponent(escape(atob(view))));
+    document.body.innerHTML='';
+    document.body.style.background='var(--bg)';
+    const held=pub.filter(c=>!c.sold),sold=pub.filter(c=>c.sold);
+    const totalVal=held.reduce((s,c)=>s+c.marketValue,0);
+    const html=`<div class="public-view">
+      <div class="public-header">
+        <div class="public-title" style="color:var(--text)">Card<span style="color:var(--green)">Vault</span></div>
+        <div class="public-sub">${pub.length} cards · Collection value $${totalVal.toFixed(2)}</div>
+      </div>
+      <div class="public-grid">
+        ${pub.map(c=>{
+          const gain=(c.saleNet||c.salePrice||c.marketValue)-c.buyPrice;
+          const img=c.photo?`<img src="${c.photo}" style="width:100%;height:140px;object-fit:contain;background:#1a1a1a;padding:4px;display:block" alt="${c.name}">`:`<div style="width:100%;height:140px;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:28px">${{Baseball:'⚾',Basketball:'🏀',Football:'🏈',Hockey:'🏒',Soccer:'⚽',UFC:'🥊',Pokemon:'✦',Other:'🃏'}[c.category]||'🃏'}</div>`;
+          return `<div style="background:#1a1a1a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden">
+            ${img}
+            <div style="padding:10px">
+              <div style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:99px;background:rgba(68,138,255,0.12);color:#448aff;display:inline-block;margin-bottom:6px;font-family:monospace">${c.category}</div>
+              ${c.sold?'<span style="font-size:11px;padding:2px 7px;border-radius:99px;background:rgba(255,82,82,0.12);color:#ff5252;font-family:monospace;margin-left:4px">sold</span>':''}
+              <div style="font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+              <div style="font-size:11px;color:#888;margin-bottom:8px">${c.set||''} ${c.condition?'· '+c.condition:''}</div>
+              <div style="font-size:12px;color:#888;display:flex;justify-content:space-between;margin-bottom:3px"><span>${c.sold?'Sold':'Value'}</span><span>$${(c.sold?(c.saleNet||c.salePrice):c.marketValue).toFixed(2)}</span></div>
+              <div style="font-size:12px;font-weight:600;font-family:monospace;color:${gain>=0?'#00e676':'#ff5252'}">${gain>=0?'+':'-'}$${Math.abs(gain).toFixed(2)}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="text-align:center;margin-top:32px;font-size:12px;color:#555">Powered by CardVault</div>
+    </div>`;
+    document.body.insertAdjacentHTML('afterbegin',`<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0f0f0f;color:#f0f0f0;font-family:'DM Sans',sans-serif;min-height:100vh}.public-view{max-width:600px;margin:0 auto;padding:20px 16px 40px}.public-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}</style>`);
+    document.body.insertAdjacentHTML('afterbegin',html);
+    return true;
+  }catch(e){return false;}
+}
+
 // SETTINGS — GEMINI KEY (stored privately in browser only)
 function saveGeminiKey(){
   const key=document.getElementById('geminiKeyInput').value.trim();
@@ -1255,7 +1472,7 @@ function renderSettingsTab(){
 }
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
-loadCache();renderDashboard();fetchFromSheet();updateKeyBadge();
+if(!checkPublicView()){loadCache();renderDashboard();fetchFromSheet();updateKeyBadge();}
 </script>
 </body>
 </html>
