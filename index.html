@@ -485,6 +485,8 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
       <button class="btn btn-green" style="width:100%;padding:11px" onclick="emergencyRecover()">Recover my cards</button>
       <div id="recoveryResult" style="margin-top:10px;font-size:13px;color:var(--text2)"></div>
     </div>
+    <div style="background:var(--blue-dim);border:1px solid rgba(68,138,255,.2);border-radius:var(--r-sm);padding:12px;font-size:13px;color:var(--blue);margin-bottom:14px;line-height:1.5">
+      Syncing to <strong>Google Sheets</strong> — open on any device and your collection loads automatically.
     </div>
     <div class="backup-grid">
       <div class="bcard"><h3>Export JSON</h3><p>Full backup with photos.</p><button class="btn btn-green" style="width:100%;padding:9px" onclick="exportJSON()">Download</button></div>
@@ -703,10 +705,14 @@ function safeParseObj(val){
 async function fetchFromSheet(){
   setSyncStatus('syncing','loading');
   try{
-    const res=await fetch(SCRIPT_URL+'?t='+Date.now());
+    // Timeout after 8 seconds
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),8000);
+    const res=await fetch(SCRIPT_URL+'?t='+Date.now(),{signal:controller.signal});
+    clearTimeout(timeout);
     const text=await res.text();
     const data=JSON.parse(text);
-    if(!Array.isArray(data))throw new Error('not array');
+    if(!Array.isArray(data))throw new Error('not array: '+text.slice(0,80));
     cards=data.map(r=>({
       name:String(r.name||''),
       set:String(r.set||''),
@@ -735,7 +741,11 @@ async function fetchFromSheet(){
   }catch(e){
     console.error('fetch error:',e.message);
     loadCache();
-    setSyncStatus('error','offline — cached');
+    if(e.name==='AbortError'){
+      setSyncStatus('error','Sheet timed out — showing cached data');
+    } else {
+      setSyncStatus('error','offline — cached');
+    }
   }
   renderDashboard();
   renderCollection();
