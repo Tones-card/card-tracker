@@ -1748,19 +1748,34 @@ function copyListingTitle(idx){
 function listOn(platform, idx){
   const c=cards[idx];
   const titleEl=document.getElementById('aiTitle_'+idx);
-  const title=titleEl&&!titleEl.textContent.includes('Tap Generate')?titleEl.textContent:c.name+' '+( c.set||'')+' '+(c.condition||'');
+  const title=titleEl&&!titleEl.textContent.includes('Tap Generate')?titleEl.textContent:c.name+' '+(c.set||'')+' '+(c.condition||'');
   const encodedTitle=encodeURIComponent(title.trim());
   const price=c.marketValue||0;
   let url='';
+  const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   if(platform==='ebay'){
-    // eBay sell-it-now pre-fill URL
-    url=`https://www.ebay.com/sell/listing?title=${encodedTitle}&price=${price}`;
+    if(isMobile){
+      // Try to open eBay app via deep link, fall back to mobile site selling overview
+      const appUrl='ebay://selling';
+      const webUrl='https://www.ebay.com/mys/overview?MyEbay&gbh=1&CurrentPage=MyeBayAllSelling&ssPageName=STRK:ME:LNLK:MESX&source=GBH';
+      // Attempt app deep link then fall back
+      const iframe=document.createElement('iframe');
+      iframe.style.display='none';
+      iframe.src=appUrl;
+      document.body.appendChild(iframe);
+      setTimeout(()=>{document.body.removeChild(iframe);window.open(webUrl,'_blank');},1500);
+      return;
+    } else {
+      // Desktop — go straight to My eBay Selling page
+      url='https://www.ebay.com/mys/overview?MyEbay&gbh=1&CurrentPage=MyeBayAllSelling&ssPageName=STRK:ME:LNLK:MESX&source=GBH';
+    }
   } else if(platform==='facebook'){
     url=`https://www.facebook.com/marketplace/create/item?title=${encodedTitle}&price=${price}&category=sports_collectibles`;
   } else if(platform==='whatnot'){
     url=`https://www.whatnot.com/sell`;
   } else if(platform==='mercari'){
-    url=`https://www.mercari.com/sell/?title=${encodedTitle}`;
+    url=isMobile?'mercari://selling':'https://www.mercari.com/sell/';
   }
   if(url)window.open(url,'_blank');
 }
