@@ -746,6 +746,7 @@ async function fetchFromSheet(){
     } else {
       setSyncStatus('error','offline — cached');
     }
+    updateRecoveryBanner('error');
   }
   renderDashboard();
   renderCollection();
@@ -1952,23 +1953,28 @@ function emergencyRecover(){
   const allKeys=['cardvault_v3','cardvault_v2','cardvault_v1','tc_cards_master','tc_cards_v4','tc_cards_v3','tc_cards_v2','tc_cards','tc_sheet_v2','tc_sheet_cache'];
   let bestCards=[];
   let foundKey='';
+  let report=[];
 
   allKeys.forEach(key=>{
     try{
       const raw=localStorage.getItem(key);
-      if(!raw)return;
+      if(!raw){report.push(`${key}: empty`);return;}
       const parsed=JSON.parse(raw);
       const cardArr=parsed.cards||(Array.isArray(parsed)?parsed:null);
-      if(cardArr&&cardArr.length>bestCards.length){
-        bestCards=cardArr;
-        foundKey=key;
+      if(cardArr){
+        report.push(`${key}: ${cardArr.length} cards found`);
+        if(cardArr.length>bestCards.length){bestCards=cardArr;foundKey=key;}
+      } else {
+        report.push(`${key}: data exists but no cards array`);
       }
-    }catch(e){}
+    }catch(e){report.push(`${key}: parse error`);}
   });
 
+  resultEl.style.color='var(--text2)';
+  resultEl.innerHTML='<strong>Storage scan:</strong><br>'+report.join('<br>');
+
   if(bestCards.length===0){
-    resultEl.style.color='var(--red)';
-    resultEl.textContent='No cached cards found in any storage location. Your data may have been cleared with the browser cache.';
+    resultEl.innerHTML+='<br><br><span style="color:var(--red)">❌ No cached cards found. Your browser cache may have been cleared. Check if your Google Sheet has data directly.</span>';
     return;
   }
 
@@ -1985,7 +1991,6 @@ function emergencyRecover(){
     grading:c.grading||null,listingUrl:c.listingUrl||''
   })).filter(c=>c.name.trim());
 
-  // Save to current cache key
   saveCache();
 
   // Auto download backup
@@ -1997,23 +2002,14 @@ function emergencyRecover(){
     a.click();
   }catch(e){}
 
-  resultEl.style.color='var(--green)';
-  resultEl.textContent=`✅ Recovered ${cards.length} cards from cache (${foundKey})! Backup downloaded. Now fixing sheet…`;
-
-  // Try to push to sheet
+  resultEl.innerHTML+='<br><br><span style="color:var(--green)">✅ Recovered '+cards.length+' cards from '+foundKey+'! Backup downloaded. Pushing to sheet…</span>';
   pushToSheet();
   renderDashboard();
   renderCollection();
-
-  setTimeout(()=>{
-    resultEl.textContent=`✅ ${cards.length} cards recovered and syncing to Google Sheet. Go to Collection tab to see them.`;
-  },2000);
 }
 
-// Show recovery banner when offline
-const _origSetSync=setSyncStatus;
-function setSyncStatus(state,msg){
-  _origSetSync(state,msg);
+// Show recovery banner when offline — using direct DOM instead of override
+function updateRecoveryBanner(state){
   const banner=document.getElementById('recoveryBanner');
   if(banner)banner.style.display=state==='error'?'block':'none';
 } 
