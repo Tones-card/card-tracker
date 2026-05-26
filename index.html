@@ -1968,7 +1968,14 @@ function renderSettingsTab(){
   if(input)input.placeholder=key?'Key saved — paste new key to update':'Paste your sk-ant-... key here';
 }
 
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+if('serviceWorker' in navigator){
+  // Unregister any old service workers first then register fresh
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  }).then(() => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
 if(!checkPublicView()){loadTheme();loadCache();renderDashboard();fetchFromSheet();updateKeyBadge();}
 </script>
 </body>
