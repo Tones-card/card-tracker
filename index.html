@@ -2048,12 +2048,11 @@ function renderSettingsTab(){
   if(input)input.placeholder=key?'Key saved — paste new key to update':'Paste your sk-ant-... key here';
 }
 
+// Unregister all service workers — they were causing offline issues
 if('serviceWorker' in navigator){
-  // Unregister any old service workers first then register fresh
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(reg => reg.unregister());
-  }).then(() => {
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    console.log('Service workers cleared');
   });
 }
 if(!checkPublicView()){loadTheme();loadCache();renderDashboard();fetchFromSheet();updateKeyBadge();}
