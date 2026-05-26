@@ -931,14 +931,38 @@ function handlePhoto(e,zoneId,btnId){
   const mime=file.type||'image/jpeg';
   const safeMime=['image/heic','image/heif',''].includes(mime)?'image/jpeg':mime;
   const reader=new FileReader();
-  reader.onload=ev=>{
+  reader.onload=async ev=>{
     const url=ev.target.result,b64=url.split(',')[1];
-    if(zoneId==='uploadZone'){pendingPhoto=url;pendingPhotoB64=b64;pendingPhotoMime=safeMime;}
-    else{editPendingPhoto=url;editPendingPhotoB64=b64;editPendingPhotoMime=safeMime;}
-    document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card">`;
+    // Show preview immediately
+    document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--text2);padding:4px">⏳ Uploading to Drive…</div>`;
     document.getElementById(btnId).disabled=false;
-    if(zoneId==='uploadZone')setAIStatus('info','Photo loaded — tap Scan');
-    else setEditAIStatus('info','Photo loaded — tap Re-scan');
+    // Store b64 for AI scan regardless
+    if(zoneId==='uploadZone'){pendingPhotoB64=b64;pendingPhotoMime=safeMime;}
+    else{editPendingPhotoB64=b64;editPendingPhotoMime=safeMime;}
+    // Upload to Google Drive via Apps Script
+    try{
+      const res=await fetch(SCRIPT_URL,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:'uploadPhoto',data:b64,mimeType:safeMime,filename:'card-'+Date.now()+'.jpg'})
+      });
+      const result=JSON.parse(await res.text());
+      if(result.url){
+        if(zoneId==='uploadZone'){pendingPhoto=result.url;}
+        else{editPendingPhoto=result.url;}
+        document.getElementById(zoneId).innerHTML=`<img src="${result.url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--green);padding:4px">✅ Saved to Google Drive</div>`;
+        if(zoneId==='uploadZone')setAIStatus('info','Photo uploaded — tap Scan to auto-fill');
+        else setEditAIStatus('info','Photo uploaded — tap Re-scan');
+      } else throw new Error(result.error||'No URL returned');
+    }catch(err){
+      // Fallback — store as local base64
+      console.warn('Drive upload failed, using local base64:',err.message);
+      if(zoneId==='uploadZone'){pendingPhoto=url;}
+      else{editPendingPhoto=url;}
+      document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--amber);padding:4px">⚠️ Saved locally (Drive unavailable)</div>`;
+      if(zoneId==='uploadZone')setAIStatus('info','Photo ready — tap Scan to auto-fill');
+      else setEditAIStatus('info','Photo ready — tap Re-scan');
+    }
   };
   reader.readAsDataURL(file);
 }
