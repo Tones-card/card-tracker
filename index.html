@@ -1756,15 +1756,9 @@ function listOn(platform, idx){
 
   if(platform==='ebay'){
     if(isMobile){
-      // Try to open eBay app via deep link, fall back to mobile site selling overview
-      const appUrl='ebay://selling';
-      const webUrl='https://www.ebay.com/mys/overview?MyEbay&gbh=1&CurrentPage=MyeBayAllSelling&ssPageName=STRK:ME:LNLK:MESX&source=GBH';
-      // Attempt app deep link then fall back
-      const iframe=document.createElement('iframe');
-      iframe.style.display='none';
-      iframe.src=appUrl;
-      document.body.appendChild(iframe);
-      setTimeout(()=>{document.body.removeChild(iframe);window.open(webUrl,'_blank');},1500);
+      // Android intent URL — opens eBay app directly if installed, falls back to Play Store or web
+      const intentUrl='intent://selling#Intent;scheme=ebay;package=com.ebay.mobile;S.browser_fallback_url=https%3A%2F%2Fwww.ebay.com%2Fmys%2Foverview%3FMyEbay%26gbh%3D1%26CurrentPage%3DMyeBayAllSelling;end';
+      window.location.href=intentUrl;
       return;
     } else {
       // Desktop — go straight to My eBay Selling page
