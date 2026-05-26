@@ -11,6 +11,9 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.png">
 <title>CardVault</title>
+<link rel="icon" href="icon.png">
+<link rel="shortcut icon" href="icon.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -262,6 +265,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
   </div>
 
   <div id="tab-dashboard" class="section active">
+    <div id="dashBackupReminder" style="display:none;background:var(--amber-dim);border:1px solid rgba(255,171,64,.3);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--amber);margin-bottom:14px">💾 <strong>Reminder:</strong> Download a backup in the Backup tab to protect your collection.</div>
     <div class="metrics" id="metrics"></div>
     <div class="chart-section">
       <div class="chart-label">P&L by category</div>
@@ -476,6 +480,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
   </div>
 
   <div id="tab-backup" class="section">
+    <div id="autoBackupWarning" style="display:none;background:var(--amber-dim);border:1px solid rgba(255,171,64,.3);border-radius:var(--r-sm);padding:12px;font-size:13px;color:var(--amber);margin-bottom:14px;line-height:1.5"></div>
     <div style="background:var(--red-dim);border:1px solid rgba(255,82,82,.3);border-radius:var(--r-sm);padding:12px;font-size:13px;color:var(--red);margin-bottom:14px;line-height:1.5;display:none" id="recoveryBanner">
       ⚠️ Sheet sync issue detected — tap <strong>Emergency Recovery</strong> below to restore your cards from local cache.
     </div>
@@ -808,6 +813,17 @@ function plStr(v){return(v>=0?'+':'-')+'$'+Math.abs(v).toFixed(2);}
 function catEmoji(cat){return{Baseball:'⚾',Basketball:'🏀',Football:'🏈',Hockey:'🏒',Soccer:'⚽',UFC:'🥊',Pokemon:'✦','Yu-Gi-Oh!':'🐉',Marvel:'⚡',Disney:'✨',Other:'🃏'}[cat]||'🃏';}
 
 function renderDashboard(){
+  // Show backup reminder on dashboard if needed
+  const lastB=localStorage.getItem('last_backup_date');
+  const sevenDays=7*24*60*60*1000;
+  const dashReminder=document.getElementById('dashBackupReminder');
+  if(dashReminder){
+    if(!lastB||(Date.now()-parseInt(lastB)>sevenDays&&cards.length>0)){
+      dashReminder.style.display='block';
+    } else {
+      dashReminder.style.display='none';
+    }
+  }
   const held=cards.filter(c=>!c.sold),sold=cards.filter(c=>c.sold);
   const totalVal=held.reduce((s,c)=>s+c.marketValue,0);
   const unrealized=held.reduce((s,c)=>s+(c.marketValue-c.buyPrice),0);
@@ -880,7 +896,25 @@ function renderSold(){
   }).join('');
 }
 
+function checkAutoBackup(){
+  const last=localStorage.getItem('last_backup_date');
+  const count=parseInt(localStorage.getItem('backup_card_count')||'0');
+  const now=Date.now();
+  const sevenDays=7*24*60*60*1000;
+  const warning=document.getElementById('autoBackupWarning');
+  if(!warning)return;
+  if(!last||now-parseInt(last)>sevenDays||cards.length>count+5){
+    warning.style.display='block';
+    if(!last)warning.innerHTML='⚠️ <strong>No backup yet!</strong> Download a backup now to protect your collection.';
+    else if(cards.length>count+5)warning.innerHTML='⚠️ <strong>'+( cards.length-count)+' new cards since last backup!</strong> Download a fresh backup.';
+    else warning.innerHTML='⚠️ <strong>Backup overdue!</strong> Last backup was '+ Math.floor((now-parseInt(last))/(24*60*60*1000))+' days ago.';
+  } else {
+    warning.style.display='none';
+  }
+}
+
 function renderBackupTab(){
+  checkAutoBackup();
   const held=cards.filter(c=>!c.sold),sold=cards.filter(c=>c.sold);
   document.getElementById('backupStats').innerHTML=`
     <div class="stat-row"><span>Total cards</span><strong>${cards.length}</strong></div>
@@ -1012,6 +1046,8 @@ function addCard(){
   if(!name||isNaN(buy)||isNaN(val)){showToast('Fill in name, buy price, and market value');return;}
   cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),pull:document.getElementById('f-pull').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null,listingUrl:''});
   pushToSheet();clearForm();showToast('Card added — syncing!');showTab('collection');
+  // remind to backup every 10 cards
+  if(cards.length%10===0)showToast('💾 '+cards.length+' cards! Go to Backup tab to download a backup.');
 }
 
 function clearForm(){
