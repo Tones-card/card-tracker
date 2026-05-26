@@ -241,6 +241,17 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
 .grade-result.error{background:var(--red-dim);color:var(--red)}
 .grade-badge{font-size:28px;font-weight:700;font-family:'DM Mono',monospace;margin-bottom:6px}
 .grade-details{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6}
+
+.listing-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-top:10px}
+.listing-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-family:'DM Mono',monospace}
+.listing-url-row{display:flex;gap:8px;margin-bottom:8px}
+.listing-url-input{flex:1;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2);font-size:12px;font-family:'DM Mono',monospace;outline:none}
+.listing-url-input:focus{border-color:var(--border2)}
+.ai-title-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--text);font-family:'DM Mono',monospace;margin:8px 0;cursor:pointer;line-height:1.4;min-height:40px;transition:border-color .15s}
+.ai-title-box:hover{border-color:var(--border2)}
+.platform-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.btn-platform{padding:7px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-platform:hover{background:var(--surface2)}
 </style>
 </head>
 <body>
@@ -709,7 +720,8 @@ async function fetchFromSheet(){
       comp:String(r.comp||''),
       pull:String(r.pull||''),
       priceHistory:safeParseHistory(r.priceHistory),
-      grading:safeParseObj(r.grading)
+      grading:safeParseObj(r.grading),
+      listingUrl:String(r.listingUrl||'')
     })).filter(c=>c.name.trim());
     saveCache();
     setSyncStatus('synced','synced');
@@ -731,7 +743,8 @@ function buildSheetCards(){
     targetWin:c.targetWin||0,targetLose:c.targetLose||0,comp:c.comp||'',
     pull:c.pull||'',
     priceHistory:JSON.stringify(c.priceHistory||[]),
-    grading:c.grading?JSON.stringify(c.grading):''
+    grading:c.grading?JSON.stringify(c.grading):'',
+    listingUrl:c.listingUrl||''
   }));
 }
 
@@ -821,6 +834,7 @@ function renderCollection(){
       ${targetHit?`<div class="card-target-hit">🎯 target hit!</div>`:''}
       ${c.watch&&c.event&&!targetHit?`<div class="card-event">${c.event}</div>`:''}
       ${c.pull?`<div style="font-size:10px;color:var(--amber);margin-top:3px">📦 ${c.pull}</div>`:''}
+      ${c.listingUrl?`<div style="font-size:10px;color:var(--blue);margin-top:3px">🏷️ Listed</div>`:''}
       ${c.grading?`<div style="font-size:10px;margin-top:4px;color:${c.grading.status==='done'?'var(--green)':c.grading.status==='grading'?'var(--amber)':'var(--blue)'}">🏅 ${c.grading.status==='done'?c.grading.company+' '+c.grading.grade:c.grading.status==='grading'?'At grader':'Sent to '+c.grading.company}</div>`:''}
     </div></div>`;
   }).join('');
@@ -978,7 +992,7 @@ function addCard(){
   const buy=parseFloat(document.getElementById('f-buy').value);
   const val=parseFloat(document.getElementById('f-val').value);
   if(!name||isNaN(buy)||isNaN(val)){showToast('Fill in name, buy price, and market value');return;}
-  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),pull:document.getElementById('f-pull').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null});
+  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),pull:document.getElementById('f-pull').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null,listingUrl:''});
   pushToSheet();clearForm();showToast('Card added — syncing!');showTab('collection');
 }
 
@@ -1057,6 +1071,32 @@ function openCard(idx){
       <div class="countdown-title">⏰ Best time to list</div>
       <div class="countdown-timer" id="cdTimer_${idx}"></div>
       <div class="cd-advice" id="cdAdvice_${idx}"></div>
+    </div>
+
+    <div class="listing-block">
+      <div class="listing-title">🏷️ Listing manager</div>
+
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">AI listing title</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div class="ai-title-box" id="aiTitle_${idx}" onclick="copyListingTitle(${idx})" title="Tap to copy">Tap Generate to create an optimized eBay title</div>
+      </div>
+      <button class="btn btn-outline" style="width:100%;padding:8px;font-size:13px;margin-bottom:10px" onclick="generateTitle(${idx})"><span class="spin" id="titleSpin_${idx}" style="display:none">◌ </span>✨ Generate title</button>
+
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px">List on platform</div>
+      <div class="platform-btns">
+        <button class="btn-platform" onclick="listOn('ebay',${idx})">📦 eBay</button>
+        <button class="btn-platform" onclick="listOn('facebook',${idx})">👥 Facebook</button>
+        <button class="btn-platform" onclick="listOn('whatnot',${idx})">🎥 Whatnot</button>
+        <button class="btn-platform" onclick="listOn('mercari',${idx})">🛍️ Mercari</button>
+      </div>
+
+      <div style="height:1px;background:var(--border);margin:12px 0"></div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px">My listing URL (paste after posting)</div>
+      <div class="listing-url-row">
+        <input class="listing-url-input" id="listingUrl_${idx}" placeholder="Paste your listing URL here" value="${c.listingUrl||''}">
+        <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;flex-shrink:0" onclick="saveListingUrl(${idx})">Save</button>
+      </div>
+      ${c.listingUrl?`<a href="${c.listingUrl}" target="_blank" style="text-decoration:none;display:block"><button class="btn btn-blue" style="width:100%;padding:9px;font-size:13px">👁 View my listing →</button></a>`:''}
     </div>
 
     <div class="grade-compare-block">
@@ -1659,6 +1699,90 @@ function loadTheme(){
 }
 function setTheme(t){setBg(t);}
 
+
+
+// LISTING MANAGER
+async function generateTitle(idx){
+  const c=cards[idx];
+  const titleEl=document.getElementById('aiTitle_'+idx);
+  const spinEl=document.getElementById('titleSpin_'+idx);
+  if(!titleEl)return;
+  const API_KEY=localStorage.getItem('anthropic_key')||localStorage.getItem('gemini_key')||'';
+  if(!API_KEY){titleEl.textContent='No API key — add your Claude key in Settings.';return;}
+  spinEl.style.display='inline';
+  titleEl.textContent='Generating…';
+  const prompt=`You are an expert eBay sports card seller. Write a single optimized eBay listing title for this card. The title must be under 80 characters, include the most searchable keywords, follow the format: Year Set Player Name Parallel Serial# Grade RC Auto. No quotes, no punctuation at the end, just the title text.
+
+Card details:
+- Player: ${c.name}
+- Set: ${c.set||''}
+- Category: ${c.category}
+- Condition: ${c.condition}
+- Notes: ${c.notes||'none'}
+- Serial: ${c.notes&&c.notes.includes('/')?c.notes.match(/\/\d+/)?.[0]||'':''}
+
+Return ONLY the title, nothing else.`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:120,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const title=data.content?.map(b=>b.text||'').join('').trim()||'Could not generate title.';
+    titleEl.textContent=title;
+    titleEl.title='Tap to copy';
+  }catch(e){
+    titleEl.textContent='Error: '+e.message.slice(0,60);
+  }
+  spinEl.style.display='none';
+}
+
+function copyListingTitle(idx){
+  const el=document.getElementById('aiTitle_'+idx);
+  if(!el||!el.textContent||el.textContent.includes('Tap Generate'))return;
+  navigator.clipboard.writeText(el.textContent).then(()=>showToast('Title copied!')).catch(()=>showToast('Long-press to copy'));
+}
+
+function listOn(platform, idx){
+  const c=cards[idx];
+  const titleEl=document.getElementById('aiTitle_'+idx);
+  const title=titleEl&&!titleEl.textContent.includes('Tap Generate')?titleEl.textContent:c.name+' '+( c.set||'')+' '+(c.condition||'');
+  const encodedTitle=encodeURIComponent(title.trim());
+  const price=c.marketValue||0;
+  let url='';
+  if(platform==='ebay'){
+    // eBay sell-it-now pre-fill URL
+    url=`https://www.ebay.com/sell/listing?title=${encodedTitle}&price=${price}`;
+  } else if(platform==='facebook'){
+    url=`https://www.facebook.com/marketplace/create/item?title=${encodedTitle}&price=${price}&category=sports_collectibles`;
+  } else if(platform==='whatnot'){
+    url=`https://www.whatnot.com/sell`;
+  } else if(platform==='mercari'){
+    url=`https://www.mercari.com/sell/?title=${encodedTitle}`;
+  }
+  if(url)window.open(url,'_blank');
+}
+
+function saveListingUrl(idx){
+  const input=document.getElementById('listingUrl_'+idx);
+  if(!input)return;
+  const url=input.value.trim();
+  cards[idx].listingUrl=url;
+  pushToSheet();
+  showToast(url?'Listing URL saved!':'Listing URL cleared');
+  // refresh the view listing button
+  const block=input.closest('.listing-block');
+  const existing=block.querySelector('a[href]');
+  if(existing)existing.remove();
+  if(url){
+    const btn=document.createElement('a');
+    btn.href=url;btn.target='_blank';btn.style.cssText='text-decoration:none;display:block;margin-top:6px';
+    btn.innerHTML=`<button class="btn btn-blue" style="width:100%;padding:9px;font-size:13px">👁 View my listing →</button>`;
+    input.closest('.listing-url-row').insertAdjacentElement('afterend',btn);
+  }
+}
 
 // BEST TIME TO LIST — COUNTDOWN
 function startCountdown(idx, eventStr){
