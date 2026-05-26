@@ -1,35 +1,46 @@
-const CACHE = 'cardvault-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
-];
+// Service Worker — always fetch fresh, cache as backup
+const CACHE = 'cardvault-v2';
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).catch(() => {})
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
+  // Delete all old caches
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(keys.map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
-  // Don't intercept Google Sheets or Anthropic API calls
-  if (e.request.url.includes('script.google.com') ||
-      e.request.url.includes('api.anthropic.com') ||
-      e.request.url.includes('fonts.gstatic.com')) {
+  const url = new URL(e.request.url);
+
+  // Never intercept API calls
+  if (
+    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('anthropic.com') ||
+    url.hostname.includes('script.google.com') ||
+    url.hostname.includes('fonts.gstatic.com') ||
+    url.hostname.includes('cdnjs.cloudflare.com')
+  ) {
     return;
   }
+
+  // For the main app file — network first, cache as fallback
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => cached))
+    fetch(e.request)
+      .then(res => {
+        // Cache the fresh response
+        const resClone = res.clone();
+        caches.open(CACHE).then(cache => cache.put(e.request, resClone));
+        return res;
+      })
+      .catch(() => {
+        // Offline fallback — use cache
+        return caches.match(e.request);
+      })
   );
 });
