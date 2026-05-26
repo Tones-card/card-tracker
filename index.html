@@ -69,9 +69,10 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .badge-sports{background:var(--blue-dim);color:var(--blue)}
 .badge-pokemon{background:var(--amber-dim);color:var(--amber)}
 .badge-ufc{background:rgba(255,82,82,0.15);color:#ff7043}
-.badge-hold{background:var(--green-dim);color:var(--green)}
+.badge-hold{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,230,118,0.25)}
 .badge-sold{background:var(--red-dim);color:var(--red)}
-.badge-watch{background:rgba(255,112,67,0.15);color:#ff7043}
+.badge-watch{background:rgba(255,112,67,0.15);color:#ff7043;border:1px solid rgba(255,112,67,0.25)}
+.badge-listed{background:rgba(68,138,255,0.15);color:#448aff;border:1px solid rgba(68,138,255,0.25)}
 .card-name{font-size:13px;font-weight:600;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-set{font-size:11px;color:var(--text2);margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-stats{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:3px}
@@ -739,7 +740,8 @@ async function fetchFromSheet(){
       pull:String(r.pull||''),
       priceHistory:safeParseHistory(r.priceHistory),
       grading:safeParseObj(r.grading),
-      listingUrl:String(r.listingUrl||'')
+      listingUrl:String(r.listingUrl||''),
+      listed:r.listed==='true'||r.listed===true
     })).filter(c=>c.name.trim());
     saveCache();
     setSyncStatus('synced','synced');
@@ -767,7 +769,8 @@ function buildSheetCards(){
     pull:c.pull||'',
     priceHistory:JSON.stringify(c.priceHistory||[]),
     grading:c.grading?JSON.stringify(c.grading):'',
-    listingUrl:c.listingUrl||''
+    listingUrl:c.listingUrl||'',
+    listed:c.listed||false
   }));
 }
 
@@ -859,7 +862,7 @@ function renderCollection(){
     const targetHit=c.targetWin>0&&c.marketValue>=c.targetWin;
     const cls=targetHit?'ccard-target':c.watch?'ccard-watch':'';
     return `<div class="ccard ${cls}" onclick="openCard(${idx})">${img}<div class="card-body">
-      <div class="card-badges"><span class="badge ${catBadge(c.category)}">${c.category}</span><span class="badge ${c.watch?'badge-watch':'badge-hold'}">${c.watch?'🔥 watch':'holding'}</span></div>
+      <div class="card-badges"><span class="badge ${catBadge(c.category)}">${c.category}</span><span class="badge ${c.listed?'badge-listed':c.watch?'badge-watch':'badge-hold'}">${c.listed?'🏷️ listed':c.watch?'🔥 watch':'🏦 holding'}</span></div>
       <div class="card-name">${c.name}</div>
       <div class="card-set">${c.set||''} ${c.condition?'· '+c.condition:''}</div>
       <div class="card-stats"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
@@ -948,9 +951,12 @@ function handlePhoto(e,zoneId,btnId){
       });
       const result=JSON.parse(await res.text());
       if(result.url){
-        if(zoneId==='uploadZone'){pendingPhoto=result.url;}
-        else{editPendingPhoto=result.url;}
-        document.getElementById(zoneId).innerHTML=`<img src="${result.url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--green);padding:4px">✅ Saved to Google Drive</div>`;
+        // Convert Drive URL to direct image URL that works in img tags
+        const driveUrl=result.url.replace('https://drive.google.com/uc?export=view&id=','https://lh3.googleusercontent.com/d/').replace(/=w800$/,'')+'=w800';
+        const finalUrl=result.url.includes('lh3.google')?result.url:driveUrl;
+        if(zoneId==='uploadZone'){pendingPhoto=finalUrl;}
+        else{editPendingPhoto=finalUrl;}
+        document.getElementById(zoneId).innerHTML=`<img src="${finalUrl}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--green);padding:4px">✅ Saved to Google Drive</div>`;
         if(zoneId==='uploadZone')setAIStatus('info','Photo uploaded — tap Scan to auto-fill');
         else setEditAIStatus('info','Photo uploaded — tap Re-scan');
       } else throw new Error(result.error||'No URL returned');
@@ -1068,7 +1074,7 @@ function addCard(){
   const buy=parseFloat(document.getElementById('f-buy').value);
   const val=parseFloat(document.getElementById('f-val').value);
   if(!name||isNaN(buy)||isNaN(val)){showToast('Fill in name, buy price, and market value');return;}
-  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),pull:document.getElementById('f-pull').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null,listingUrl:''});
+  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),pull:document.getElementById('f-pull').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null,listingUrl:'',listed:false});
   pushToSheet();clearForm();showToast('Card added — syncing!');showTab('collection');
   // remind to backup every 10 cards
   if(cards.length%10===0)showToast('💾 '+cards.length+' cards! Go to Backup tab to download a backup.');
@@ -1121,6 +1127,7 @@ function openCard(idx){
       <span class="badge ${catBadge(c.category)}">${c.category}</span>
       ${c.sold?'<span class="badge badge-sold">sold</span>':''}
       ${c.watch?'<span class="badge badge-watch">🔥 watch</span>':''}
+      ${c.listed?'<span class="badge badge-listed">🏷️ listed on eBay</span>':''}
       ${targetHit?'<span class="badge" style="background:var(--green-dim);color:var(--green)">🎯 target hit!</span>':''}
     </div>
     <div class="modal-rows">
@@ -1190,6 +1197,7 @@ function openCard(idx){
     <div class="btn-row" style="margin-top:8px">
       <button class="btn btn-amber" onclick="openEditModal(${idx})">✏️ Edit</button>
       ${!c.sold?`<button class="btn btn-green" onclick="markSold(${idx})">Mark sold</button>`:''}
+      ${!c.sold?`<button class="btn ${c.listed?'btn-outline':'btn-blue'}" onclick="toggleListed(${idx})">${c.listed?'✅ Listed — tap to unlist':'🏷️ Mark as listed'}</button>`:''}
       ${!c.sold?`<button class="btn btn-outline" onclick="openGradeModal(${idx})">🏅 ${c.grading?'Update grading':'Send to grader'}</button>`:''}
       <button class="btn btn-outline" onclick="closeModal()">Close</button>
     </div>`;
@@ -1271,6 +1279,7 @@ function saveEdit(){
     targetLose:parseFloat(document.getElementById('e-tlose').value)||0,
     comp:document.getElementById('e-comp').value.trim(),
     pull:document.getElementById('e-pull').value.trim(),
+    listed:cards[editingIdx].listed||false,
     priceHistory:history
   };
   pushToSheet();closeEditModal();showToast('Card updated — syncing!');
@@ -1283,6 +1292,14 @@ function deleteFromEdit(){
   cards.splice(editingIdx,1);
   pushToSheet();closeEditModal();showToast('Deleted');
   renderCollection();renderSold();renderDashboard();
+}
+
+function toggleListed(idx){
+  cards[idx].listed=!cards[idx].listed;
+  pushToSheet();
+  closeModal();
+  showToast(cards[idx].listed?'Marked as listed on eBay!':'Removed listed status');
+  renderCollection();
 }
 
 function markSold(idx){
@@ -2048,7 +2065,8 @@ function emergencyRecover(){
     watch:c.watch||false,event:c.event||'',opponent:c.opponent||'',
     targetWin:parseFloat(c.targetWin)||0,targetLose:parseFloat(c.targetLose)||0,
     comp:c.comp||'',priceHistory:c.priceHistory||[],
-    grading:c.grading||null,listingUrl:c.listingUrl||''
+    grading:c.grading||null,listingUrl:c.listingUrl||'',
+    listed:c.listed||false
   })).filter(c=>c.name.trim());
 
   saveCache();
