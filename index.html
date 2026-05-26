@@ -476,8 +476,15 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
   </div>
 
   <div id="tab-backup" class="section">
-    <div style="background:var(--blue-dim);border:1px solid rgba(68,138,255,.2);border-radius:var(--r-sm);padding:12px;font-size:13px;color:var(--blue);margin-bottom:14px;line-height:1.5">
-      Syncing to <strong>Google Sheets</strong> — open on any device and your collection loads automatically.
+    <div style="background:var(--red-dim);border:1px solid rgba(255,82,82,.3);border-radius:var(--r-sm);padding:12px;font-size:13px;color:var(--red);margin-bottom:14px;line-height:1.5;display:none" id="recoveryBanner">
+      ⚠️ Sheet sync issue detected — tap <strong>Emergency Recovery</strong> below to restore your cards from local cache.
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:14px" id="recoveryBlock">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">🚨 Emergency recovery</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">If your cards disappeared, tap this to restore them from your browser's local storage. Also downloads a backup file automatically.</div>
+      <button class="btn btn-green" style="width:100%;padding:11px" onclick="emergencyRecover()">Recover my cards</button>
+      <div id="recoveryResult" style="margin-top:10px;font-size:13px;color:var(--text2)"></div>
+    </div>
     </div>
     <div class="backup-grid">
       <div class="bcard"><h3>Export JSON</h3><p>Full backup with photos.</p><button class="btn btn-green" style="width:100%;padding:9px" onclick="exportJSON()">Download</button></div>
@@ -1926,7 +1933,80 @@ Be specific and honest. If the photo is unclear say so in confidence field.`;
   }
 }
 
-// SETTINGS — GEMINI KEY (stored privately in browser only)
+// EMERGENCY RECOVERY
+function emergencyRecover(){
+  const resultEl=document.getElementById('recoveryResult');
+  resultEl.textContent='Checking all storage locations…';
+
+  // Check every possible cache key we've ever used
+  const allKeys=['cardvault_v3','cardvault_v2','cardvault_v1','tc_cards_master','tc_cards_v4','tc_cards_v3','tc_cards_v2','tc_cards','tc_sheet_v2','tc_sheet_cache'];
+  let bestCards=[];
+  let foundKey='';
+
+  allKeys.forEach(key=>{
+    try{
+      const raw=localStorage.getItem(key);
+      if(!raw)return;
+      const parsed=JSON.parse(raw);
+      const cardArr=parsed.cards||(Array.isArray(parsed)?parsed:null);
+      if(cardArr&&cardArr.length>bestCards.length){
+        bestCards=cardArr;
+        foundKey=key;
+      }
+    }catch(e){}
+  });
+
+  if(bestCards.length===0){
+    resultEl.style.color='var(--red)';
+    resultEl.textContent='No cached cards found in any storage location. Your data may have been cleared with the browser cache.';
+    return;
+  }
+
+  // Restore cards
+  cards=bestCards.map(c=>({
+    name:c.name||'',set:c.set||'',category:c.category||'Other',
+    condition:c.condition||'Raw',buyPrice:parseFloat(c.buyPrice)||0,
+    marketValue:parseFloat(c.marketValue)||0,notes:c.notes||'',
+    pull:c.pull||'',sold:c.sold||false,salePrice:parseFloat(c.salePrice)||0,
+    addedAt:c.addedAt||Date.now(),photo:c.photo||null,
+    watch:c.watch||false,event:c.event||'',opponent:c.opponent||'',
+    targetWin:parseFloat(c.targetWin)||0,targetLose:parseFloat(c.targetLose)||0,
+    comp:c.comp||'',priceHistory:c.priceHistory||[],
+    grading:c.grading||null,listingUrl:c.listingUrl||''
+  })).filter(c=>c.name.trim());
+
+  // Save to current cache key
+  saveCache();
+
+  // Auto download backup
+  try{
+    const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),version:'recovery',cards},null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='cardvault-recovery-'+new Date().toISOString().slice(0,10)+'.json';
+    a.click();
+  }catch(e){}
+
+  resultEl.style.color='var(--green)';
+  resultEl.textContent=`✅ Recovered ${cards.length} cards from cache (${foundKey})! Backup downloaded. Now fixing sheet…`;
+
+  // Try to push to sheet
+  pushToSheet();
+  renderDashboard();
+  renderCollection();
+
+  setTimeout(()=>{
+    resultEl.textContent=`✅ ${cards.length} cards recovered and syncing to Google Sheet. Go to Collection tab to see them.`;
+  },2000);
+}
+
+// Show recovery banner when offline
+const _origSetSync=setSyncStatus;
+function setSyncStatus(state,msg){
+  _origSetSync(state,msg);
+  const banner=document.getElementById('recoveryBanner');
+  if(banner)banner.style.display=state==='error'?'block':'none';
+} 
 function saveGeminiKey(){
   const key=document.getElementById('geminiKeyInput').value.trim();
   if(!key||!key.startsWith('sk-ant-')){showKeyStatus('error','Invalid key — should start with sk-ant-...');return;}
