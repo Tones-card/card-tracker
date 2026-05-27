@@ -730,7 +730,7 @@ async function fetchFromSheet(){
       sold:r.sold==='true'||r.sold===true,
       salePrice:parseFloat(r.salePrice)||0,
       addedAt:parseInt(r.addedAt)||Date.now(),
-      photo:(r.photo&&String(r.photo).length>200)?String(r.photo):null,
+      photo:(r.photo&&String(r.photo).trim()!=='')?String(r.photo):null,
       watch:r.watch==='true'||r.watch===true,
       event:String(r.event||''),
       opponent:String(r.opponent||''),
