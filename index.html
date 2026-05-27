@@ -929,44 +929,41 @@ function renderBackupTab(){
     <div class="stat-row"><span>On watch list</span><strong>${cards.filter(c=>c.watch).length}</strong></div>`;
 }
 
+function compressImage(file,maxW,maxH,quality){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        let w=img.width,h=img.height;
+        if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+        if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function handlePhoto(e,zoneId,btnId){
   const file=e.target.files[0];if(!file)return;
   const mime=file.type||'image/jpeg';
   const safeMime=['image/heic','image/heif',''].includes(mime)?'image/jpeg':mime;
-  const reader=new FileReader();
-  reader.onload=async ev=>{
-    const url=ev.target.result,b64=url.split(',')[1];
-    // Always store b64 locally for AI scan
-    if(zoneId==='uploadZone'){pendingPhotoB64=b64;pendingPhotoMime=safeMime;}
-    else{editPendingPhotoB64=b64;editPendingPhotoMime=safeMime;}
-    // Show local preview immediately
-    document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--text2);padding:4px">⏳ Saving to Drive…</div>`;
+  // Compress to max 800x800 at 0.7 quality — keeps file small for sheet storage
+  compressImage(file,800,800,0.7).then(compressed=>{
+    const b64=compressed.split(',')[1];
+    if(zoneId==='uploadZone'){pendingPhoto=compressed;pendingPhotoB64=b64;pendingPhotoMime='image/jpeg';}
+    else{editPendingPhoto=compressed;editPendingPhotoB64=b64;editPendingPhotoMime='image/jpeg';}
+    document.getElementById(zoneId).innerHTML=`<img src="${compressed}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card">`;
     document.getElementById(btnId).disabled=false;
-    try{
-      const res=await fetch(SCRIPT_URL,{
-        method:'POST',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({action:'uploadPhoto',data:b64,mimeType:safeMime,filename:'card-'+Date.now()+'.jpg'})
-      });
-      const result=JSON.parse(await res.text());
-      if(result.url){
-        if(zoneId==='uploadZone'){pendingPhoto=result.url;}
-        else{editPendingPhoto=result.url;}
-        document.getElementById(zoneId).innerHTML=`<img src="${result.url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--green);padding:4px">✅ Saved to Drive</div>`;
-        if(zoneId==='uploadZone')setAIStatus('info','Photo saved — tap Scan to auto-fill');
-        else setEditAIStatus('info','Photo saved — tap Re-scan');
-      } else throw new Error(result.error||'No URL');
-    }catch(err){
-      // Fallback to base64 if Drive fails
-      console.warn('Drive upload failed:',err.message);
-      if(zoneId==='uploadZone'){pendingPhoto=url;}
-      else{editPendingPhoto=url;}
-      document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--amber);padding:4px">⚠️ Saved locally</div>`;
-      if(zoneId==='uploadZone')setAIStatus('info','Photo ready — tap Scan to auto-fill');
-      else setEditAIStatus('info','Photo ready — tap Re-scan');
-    }
-  };
-  reader.readAsDataURL(file);
+    if(zoneId==='uploadZone')setAIStatus('info','Photo ready — tap Scan to auto-fill');
+    else setEditAIStatus('info','Photo ready — tap Re-scan');
+  });
 }
 
 function setAIStatus(t,m){const el=document.getElementById('aiStatus');el.className='ai-status '+t;el.textContent=m;}
