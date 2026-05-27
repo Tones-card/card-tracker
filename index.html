@@ -867,7 +867,7 @@ function renderCollection(){
   if(!f.length){document.getElementById('cardGrid').innerHTML=`<div class="empty">${q?'No cards match':'No cards yet — add your first one!'}</div>`;return;}
   document.getElementById('cardGrid').innerHTML=f.map(c=>{
     const idx=cards.indexOf(c),gain=pl(c);
-    const img=c.photo?`<img data-src="${c.photo}" alt="${c.name}" class="card-img lazy" style="opacity:0">`:`<div class="card-placeholder">${catEmoji(c.category)}</div>`;
+    const img=c.photo?`<img src="${c.photo}" alt="${c.name}" class="card-img" loading="lazy">`:`<div class="card-placeholder">${catEmoji(c.category)}</div>`;
     const targetHit=c.targetWin>0&&c.marketValue>=c.targetWin;
     const cls=targetHit?'ccard-target':c.watch?'ccard-watch':'';
     return `<div class="ccard ${cls}" onclick="openCard(${idx})">${img}<div class="card-body">
