@@ -273,7 +273,10 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
   </div>
 
   <div id="tab-dashboard" class="section active">
-    <div id="dashBackupReminder" style="display:none;background:var(--amber-dim);border:1px solid rgba(255,171,64,.3);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--amber);margin-bottom:14px">💾 <strong>Reminder:</strong> Download a backup in the Backup tab to protect your collection.</div>
+    <div id="dashBackupReminder" style="display:none;background:var(--amber-dim);border:1px solid rgba(255,171,64,.3);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--amber);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <span>💾 <strong>Reminder:</strong> Download a backup to protect your collection.</span>
+      <span onclick="dismissBackupReminder()" style="cursor:pointer;font-size:18px;padding:0 4px;opacity:0.7">✕</span>
+    </div>
     <div class="metrics" id="metrics"></div>
     <div class="chart-section">
       <div class="chart-label">P&L by category</div>
@@ -1379,7 +1382,16 @@ function confirmSale(){
   renderCollection();renderSold();renderDashboard();
 }
 
+function dismissBackupReminder(){
+  localStorage.setItem('last_backup_date',Date.now().toString());
+  localStorage.setItem('backup_card_count',cards.length.toString());
+  const el=document.getElementById('dashBackupReminder');
+  if(el)el.style.display='none';
+}
 function exportJSON(){
+  localStorage.setItem('last_backup_date',Date.now().toString());
+  localStorage.setItem('backup_card_count',cards.length.toString());
+  dismissBackupReminder();
   const b=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),version:11,cards},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='cardvault-'+new Date().toISOString().slice(0,10)+'.json';a.click();
   showToast('Backup downloaded!');
