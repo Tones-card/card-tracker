@@ -936,13 +936,12 @@ function handlePhoto(e,zoneId,btnId){
   const reader=new FileReader();
   reader.onload=async ev=>{
     const url=ev.target.result,b64=url.split(',')[1];
-    // Show preview immediately
-    document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--text2);padding:4px">⏳ Uploading to Drive…</div>`;
-    document.getElementById(btnId).disabled=false;
-    // Store b64 for AI scan regardless
+    // Always store b64 locally for AI scan
     if(zoneId==='uploadZone'){pendingPhotoB64=b64;pendingPhotoMime=safeMime;}
     else{editPendingPhotoB64=b64;editPendingPhotoMime=safeMime;}
-    // Upload to Google Drive via Apps Script
+    // Show local preview immediately
+    document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--text2);padding:4px">⏳ Saving to Drive…</div>`;
+    document.getElementById(btnId).disabled=false;
     try{
       const res=await fetch(SCRIPT_URL,{
         method:'POST',
@@ -951,21 +950,18 @@ function handlePhoto(e,zoneId,btnId){
       });
       const result=JSON.parse(await res.text());
       if(result.url){
-        // Convert Drive URL to direct image URL that works in img tags
-        const driveUrl=result.url.replace('https://drive.google.com/uc?export=view&id=','https://lh3.googleusercontent.com/d/').replace(/=w800$/,'')+'=w800';
-        const finalUrl=result.url.includes('lh3.google')?result.url:driveUrl;
-        if(zoneId==='uploadZone'){pendingPhoto=finalUrl;}
-        else{editPendingPhoto=finalUrl;}
-        document.getElementById(zoneId).innerHTML=`<img src="${finalUrl}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--green);padding:4px">✅ Saved to Google Drive</div>`;
-        if(zoneId==='uploadZone')setAIStatus('info','Photo uploaded — tap Scan to auto-fill');
-        else setEditAIStatus('info','Photo uploaded — tap Re-scan');
-      } else throw new Error(result.error||'No URL returned');
+        if(zoneId==='uploadZone'){pendingPhoto=result.url;}
+        else{editPendingPhoto=result.url;}
+        document.getElementById(zoneId).innerHTML=`<img src="${result.url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--green);padding:4px">✅ Saved to Drive</div>`;
+        if(zoneId==='uploadZone')setAIStatus('info','Photo saved — tap Scan to auto-fill');
+        else setEditAIStatus('info','Photo saved — tap Re-scan');
+      } else throw new Error(result.error||'No URL');
     }catch(err){
-      // Fallback — store as local base64
-      console.warn('Drive upload failed, using local base64:',err.message);
+      // Fallback to base64 if Drive fails
+      console.warn('Drive upload failed:',err.message);
       if(zoneId==='uploadZone'){pendingPhoto=url;}
       else{editPendingPhoto=url;}
-      document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--amber);padding:4px">⚠️ Saved locally (Drive unavailable)</div>`;
+      document.getElementById(zoneId).innerHTML=`<img src="${url}" style="width:100%;height:160px;object-fit:contain;background:var(--surface2);padding:6px;display:block" alt="Card"><div style="text-align:center;font-size:11px;color:var(--amber);padding:4px">⚠️ Saved locally</div>`;
       if(zoneId==='uploadZone')setAIStatus('info','Photo ready — tap Scan to auto-fill');
       else setEditAIStatus('info','Photo ready — tap Re-scan');
     }
