@@ -61,7 +61,13 @@ html,body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-seri
 .ccard:hover{border-color:var(--border2)}
 .ccard-watch{border-color:rgba(255,112,67,0.4)!important}
 .ccard-target{border-color:rgba(0,230,118,0.5)!important;box-shadow:0 0 10px rgba(0,230,118,0.15)}
+
 .card-img{width:100%;height:160px;object-fit:contain;display:block;background:var(--surface2);padding:6px}
+.card-img-lazy{width:100%;height:160px;background:var(--surface2);display:flex;align-items:center;justify-content:center}
+.card-img-lazy::after{content:'';width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+img.lazy{opacity:0;transition:opacity .3s}
+img.lazy.loaded{opacity:1}
+
 .card-placeholder{width:100%;height:160px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:32px}
 .card-body{padding:10px}
 .card-badges{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
@@ -856,9 +862,9 @@ function renderCollection(){
   if(q)f=f.filter(c=>c.name.toLowerCase().includes(q)||(c.set||'').toLowerCase().includes(q)||c.category.toLowerCase().includes(q)||(c.notes||'').toLowerCase().includes(q));
   f=sortCards(f);
   if(!f.length){document.getElementById('cardGrid').innerHTML=`<div class="empty">${q?'No cards match':'No cards yet — add your first one!'}</div>`;return;}
-  document.getElementById('cardGrid').innerHTML=f.map(c=>{
+  const _cgHtml=f.map(c=>{
     const idx=cards.indexOf(c),gain=pl(c);
-    const img=c.photo?`<img src="${c.photo}" class="card-img" alt="${c.name}">`:`<div class="card-placeholder">${catEmoji(c.category)}</div>`;
+    const img=c.photo?`<img data-src="${c.photo}" alt="${c.name}" class="card-img lazy" style="opacity:0">`:`<div class="card-placeholder">${catEmoji(c.category)}</div>`;
     const targetHit=c.targetWin>0&&c.marketValue>=c.targetWin;
     const cls=targetHit?'ccard-target':c.watch?'ccard-watch':'';
     return `<div class="ccard ${cls}" onclick="openCard(${idx})">${img}<div class="card-body">
@@ -875,6 +881,7 @@ function renderCollection(){
       ${c.grading?`<div style="font-size:10px;margin-top:4px;color:${c.grading.status==='done'?'var(--green)':c.grading.status==='grading'?'var(--amber)':'var(--blue)'}">🏅 ${c.grading.status==='done'?c.grading.company+' '+c.grading.grade:c.grading.status==='grading'?'At grader':'Sent to '+c.grading.company}</div>`:''}
     </div></div>`;
   }).join('');
+  observeLazyImages();
 }
 
 function setFilter(f){activeFilter=f;renderCollection();}
@@ -1879,6 +1886,33 @@ function saveListingUrl(idx){
     btn.innerHTML=`<button class="btn btn-blue" style="width:100%;padding:9px;font-size:13px">👁 View my listing →</button>`;
     input.closest('.listing-url-row').insertAdjacentElement('afterend',btn);
   }
+}
+
+
+// LAZY LOADING
+const lazyObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      const img=entry.target;
+      if(img.dataset.src){
+        img.src=img.dataset.src;
+        img.classList.add('lazy');
+        img.onload=()=>img.classList.add('loaded');
+        img.onerror=()=>{img.style.display='none';};
+        delete img.dataset.src;
+        lazyObserver.unobserve(img);
+      }
+    }
+  });
+},{rootMargin:'200px'});
+
+function lazyImg(src,alt,cls){
+  if(!src)return null;
+  return `<img data-src="${src}" alt="${alt||''}" class="${cls||'card-img'} lazy" style="opacity:0">`;
+}
+
+function observeLazyImages(){
+  document.querySelectorAll('img.lazy[data-src]').forEach(img=>lazyObserver.observe(img));
 }
 
 // BEST TIME TO LIST — COUNTDOWN
