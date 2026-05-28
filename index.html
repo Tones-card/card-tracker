@@ -256,6 +256,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
 .grade-badge{font-size:28px;font-weight:700;font-family:'DM Mono',monospace;margin-bottom:6px}
 .grade-details{font-size:12px;color:var(--text2);margin-top:6px;line-height:1.6}
 
+#boxLogSection .chart-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace}
 .listing-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-top:10px}
 .listing-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-family:'DM Mono',monospace}
 .listing-url-row{display:flex;gap:8px;margin-bottom:8px}
@@ -284,6 +285,64 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
     <div class="chart-section">
       <div class="chart-label">P&L by category</div>
       <div class="chart-wrap"><canvas id="plChart"></canvas></div>
+    </div>
+
+    <!-- BOX / PACK LOG -->
+    <div class="chart-section" id="boxLogSection">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="chart-label" style="margin-bottom:0">📦 Box &amp; Pack purchases</div>
+        <button class="btn btn-outline" style="font-size:12px;padding:5px 12px" onclick="openBoxLogModal()">+ Add</button>
+      </div>
+      <div id="boxLogList"></div>
+      <div id="boxLogEmpty" style="display:none;text-align:center;padding:20px 0;font-size:13px;color:var(--text3)">No boxes or packs logged yet</div>
+      <div id="boxLogTotals" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>Total units logged</span><strong id="boxLogTotalCount" style="color:var(--text)"></strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2)"><span>Total spent on boxes/packs</span><strong id="boxLogTotalSpent" style="color:var(--red)"></strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOX LOG MODAL -->
+  <div class="grade-modal-bg" id="boxLogModalBg" style="z-index:350">
+    <div class="grade-modal">
+      <div class="modal-handle"></div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:4px" id="boxLogModalTitle">Log Box / Pack Purchase</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Track what you spent on boxes and packs separately from individual cards.</div>
+      <div class="form-block" style="margin-bottom:12px">
+        <div class="form-block-title">Purchase details</div>
+        <div class="form-row full"><div class="field"><label>Product name</label><input id="bl-name" placeholder="e.g. 2024 Bowman Hobby Box, Topps Series 2 Blaster"></div></div>
+        <div class="form-row">
+          <div class="field"><label>Type</label>
+            <select id="bl-type">
+              <option value="Hobby Box">Hobby Box</option>
+              <option value="Jumbo Box">Jumbo Box</option>
+              <option value="Blaster Box">Blaster Box</option>
+              <option value="Hanger Box">Hanger Box</option>
+              <option value="Retail Box">Retail Box</option>
+              <option value="Fat Pack">Fat Pack</option>
+              <option value="Gravity Feed">Gravity Feed</option>
+              <option value="Collector Box">Collector Box</option>
+              <option value="Single Pack">Single Pack</option>
+              <option value="Booster Box">Booster Box</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field"><label>Quantity</label><input id="bl-qty" type="number" min="1" step="1" value="1" oninput="calcBoxLogTotal()"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Cost per unit ($)</label><input id="bl-cost" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcBoxLogTotal()"></div>
+          <div class="field"><label>Date purchased</label><input id="bl-date" type="date"></div>
+        </div>
+        <div class="form-row full"><div class="field"><label>Notes (optional)</label><input id="bl-notes" placeholder="e.g. bought at Target, group break"></div></div>
+      </div>
+      <div style="background:var(--amber-dim);border:1px solid rgba(255,171,64,.25);border-radius:var(--r-sm);padding:12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--text2)">Total cost</span>
+        <strong style="font-size:18px;font-family:'DM Mono',monospace;color:var(--amber)" id="blTotalDisplay">$0.00</strong>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="saveBoxLogEntry()">Save purchase</button>
+        <button class="btn btn-outline" onclick="closeBoxLogModal()">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -707,6 +766,10 @@ let cards=[],plChart=null,activeFilter='All';
 let pendingPhoto=null,pendingPhotoB64=null,pendingPhotoMime='image/jpeg';
 let editPendingPhoto=null,editPendingPhotoB64=null,editPendingPhotoMime='image/jpeg';
 let editingIdx=-1,saveTimer=null;
+let boxLog=[];
+const BOX_LOG_KEY='cardvault_boxlog';
+function loadBoxLog(){try{const d=localStorage.getItem(BOX_LOG_KEY);if(d)boxLog=JSON.parse(d);}catch(e){boxLog=[];}}
+function saveBoxLog(){try{localStorage.setItem(BOX_LOG_KEY,JSON.stringify(boxLog));}catch(e){}}
 
 function loadCache(){try{const c=localStorage.getItem(CACHE_KEY);if(c)cards=JSON.parse(c);}catch(e){cards=[];}}
 function saveCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify(cards));}catch(e){}}
@@ -719,6 +782,13 @@ function safeParseHistory(val){
 function safeParseObj(val){
   try{const s=String(val||'');if(s.startsWith('{'))return JSON.parse(s);}catch(e){}
   return null;
+}
+
+// Google Sheets returns TRUE/FALSE (uppercase) for boolean columns — handle all variants
+function parseBool(v){
+  if(v===true||v===1)return true;
+  if(typeof v==='string'){const s=v.trim().toLowerCase();return s==='true'||s==='1'||s==='yes';}
+  return false;
 }
 
 async function fetchFromSheet(){
@@ -740,11 +810,11 @@ async function fetchFromSheet(){
       buyPrice:parseFloat(r.buyPrice)||0,
       marketValue:parseFloat(r.marketValue)||0,
       notes:String(r.notes||''),
-      sold:r.sold==='true'||r.sold===true,
+      sold:parseBool(r.sold),
       salePrice:parseFloat(r.salePrice)||0,
       addedAt:parseInt(r.addedAt)||Date.now(),
       photo:(r.photo&&String(r.photo).trim()!=='')?String(r.photo):null,
-      watch:r.watch==='true'||r.watch===true,
+      watch:parseBool(r.watch),
       event:String(r.event||''),
       opponent:String(r.opponent||''),
       targetWin:parseFloat(r.targetWin)||0,
@@ -754,8 +824,8 @@ async function fetchFromSheet(){
       priceHistory:safeParseHistory(r.priceHistory),
       grading:safeParseObj(r.grading),
       listingUrl:String(r.listingUrl||''),
-      listed:r.listed==='true'||r.listed===true,
-      personal:r.personal==='true'||r.personal===true
+      listed:parseBool(r.listed),
+      personal:parseBool(r.personal)
     })).filter(c=>c.name.trim());
     // De-duplicate by name+addedAt in case of sheet duplicates
     const seen=new Set();
@@ -856,12 +926,15 @@ function renderDashboard(){
   const totalVal=held.reduce((s,c)=>s+c.marketValue,0);
   const unrealized=held.reduce((s,c)=>s+(c.marketValue-c.buyPrice),0);
   const realized=sold.reduce((s,c)=>s+(c.salePrice-c.buyPrice),0);
+  const totalSpent=cards.reduce((s,c)=>s+c.buyPrice,0)+boxLog.reduce((s,b)=>s+b.totalCost,0);
   document.getElementById('metrics').innerHTML=`
     <div class="metric"><div class="metric-label">Cards held</div><div class="metric-value">${held.length}</div></div>
     <div class="metric"><div class="metric-label">Cards sold</div><div class="metric-value">${sold.length}</div></div>
     <div class="metric wide"><div class="metric-label">Collection value</div><div class="metric-value">$${totalVal.toFixed(2)}</div></div>
     <div class="metric"><div class="metric-label">Unrealized P&L</div><div class="metric-value ${unrealized>=0?'pos':'neg'}">${plStr(unrealized)}</div></div>
-    <div class="metric"><div class="metric-label">Realized profit</div><div class="metric-value ${realized>=0?'pos':'neg'}">${plStr(realized)}</div></div>`;
+    <div class="metric"><div class="metric-label">Realized profit</div><div class="metric-value ${realized>=0?'pos':'neg'}">${plStr(realized)}</div></div>
+    <div class="metric wide"><div class="metric-label">Total spent (cards + boxes)</div><div class="metric-value" style="color:var(--red)">$${totalSpent.toFixed(2)}</div></div>`;
+  renderBoxLogSection();
   const cats=[...new Set(cards.map(c=>c.category))];
   const catData=cats.map(cat=>({cat,val:cards.filter(c=>c.category===cat).reduce((s,c)=>s+pl(c),0)}));
   if(plChart){plChart.destroy();plChart=null;}
@@ -870,6 +943,100 @@ function renderDashboard(){
   if(!wrap.querySelector('canvas'))wrap.innerHTML='<canvas id="plChart"></canvas>';
   plChart=new Chart(document.getElementById('plChart'),{type:'bar',data:{labels:catData.map(d=>d.cat),datasets:[{data:catData.map(d=>parseFloat(d.val.toFixed(2))),backgroundColor:catData.map(d=>d.val>=0?'#00e676':'#ff5252'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>(v<0?'-':'')+'$'+Math.abs(v),color:'#555',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#555',font:{size:11}},grid:{display:false}}}}});
 }
+
+// BOX LOG
+let editingBoxIdx=-1;
+
+function renderBoxLogSection(){
+  const list=document.getElementById('boxLogList');
+  const empty=document.getElementById('boxLogEmpty');
+  const totals=document.getElementById('boxLogTotals');
+  if(!list)return;
+  if(!boxLog.length){
+    list.innerHTML='';
+    empty.style.display='block';
+    totals.style.display='none';
+    return;
+  }
+  empty.style.display='none';
+  totals.style.display='block';
+  const totalUnits=boxLog.reduce((s,b)=>s+b.qty,0);
+  const totalSpent=boxLog.reduce((s,b)=>s+b.totalCost,0);
+  document.getElementById('boxLogTotalCount').textContent=totalUnits+' unit'+(totalUnits!==1?'s':'');
+  document.getElementById('boxLogTotalSpent').textContent='$'+totalSpent.toFixed(2);
+  const sorted=[...boxLog].sort((a,b)=>b.addedAt-a.addedAt);
+  list.innerHTML=sorted.map(b=>{
+    const origIdx=boxLog.indexOf(b);
+    const typeIcon={'Hobby Box':'📦','Jumbo Box':'📦','Blaster Box':'🟦','Hanger Box':'🟧','Retail Box':'🏪','Fat Pack':'📋','Gravity Feed':'🗂️','Collector Box':'💎','Single Pack':'🎴','Booster Box':'✨','Other':'📦'}[b.type]||'📦';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:20px;flex-shrink:0">${typeIcon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:1px">${b.qty}× ${b.type} · $${b.costPer.toFixed(2)} each${b.date?' · '+b.date:''}${b.notes?' · '+b.notes:''}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--red)">$${b.totalCost.toFixed(2)}</div>
+        <button onclick="deleteBoxLogEntry(${origIdx})" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:2px 0;font-family:'DM Sans',sans-serif">remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openBoxLogModal(editIdx){
+  editingBoxIdx=editIdx>=0?editIdx:-1;
+  const b=editIdx>=0?boxLog[editIdx]:null;
+  document.getElementById('boxLogModalTitle').textContent=b?'Edit Purchase':'Log Box / Pack Purchase';
+  document.getElementById('bl-name').value=b?b.name:'';
+  document.getElementById('bl-type').value=b?b.type:'Hobby Box';
+  document.getElementById('bl-qty').value=b?b.qty:1;
+  document.getElementById('bl-cost').value=b?b.costPer:'';
+  document.getElementById('bl-date').value=b?b.date:new Date().toISOString().slice(0,10);
+  document.getElementById('bl-notes').value=b?b.notes:'';
+  calcBoxLogTotal();
+  document.getElementById('boxLogModalBg').classList.add('open');
+}
+
+function closeBoxLogModal(){document.getElementById('boxLogModalBg').classList.remove('open');editingBoxIdx=-1;}
+
+function calcBoxLogTotal(){
+  const qty=parseFloat(document.getElementById('bl-qty').value)||0;
+  const cost=parseFloat(document.getElementById('bl-cost').value)||0;
+  document.getElementById('blTotalDisplay').textContent='$'+(qty*cost).toFixed(2);
+}
+
+function saveBoxLogEntry(){
+  const name=document.getElementById('bl-name').value.trim();
+  const qty=parseInt(document.getElementById('bl-qty').value)||1;
+  const cost=parseFloat(document.getElementById('bl-cost').value);
+  if(!name){showToast('Enter a product name');return;}
+  if(isNaN(cost)||cost<0){showToast('Enter a valid cost');return;}
+  const entry={
+    name,
+    type:document.getElementById('bl-type').value,
+    qty,
+    costPer:cost,
+    totalCost:parseFloat((qty*cost).toFixed(2)),
+    date:document.getElementById('bl-date').value,
+    notes:document.getElementById('bl-notes').value.trim(),
+    addedAt:editingBoxIdx>=0?boxLog[editingBoxIdx].addedAt:Date.now()
+  };
+  if(editingBoxIdx>=0){boxLog[editingBoxIdx]=entry;}
+  else{boxLog.push(entry);}
+  saveBoxLog();
+  closeBoxLogModal();
+  showToast('Purchase logged — $'+(qty*cost).toFixed(2)+' total');
+  renderDashboard();
+}
+
+function deleteBoxLogEntry(idx){
+  if(!confirm('Remove this purchase from the log?'))return;
+  boxLog.splice(idx,1);
+  saveBoxLog();
+  showToast('Removed');
+  renderDashboard();
+}
+
+document.getElementById('boxLogModalBg').addEventListener('click',e=>{if(e.target===document.getElementById('boxLogModalBg'))closeBoxLogModal();});
 
 function renderCollection(){
   renderSortRow();
@@ -2212,7 +2379,7 @@ if('serviceWorker' in navigator){
     console.log('Service workers cleared');
   });
 }
-if(!checkPublicView()){loadTheme();loadCache();renderDashboard();fetchFromSheet();updateKeyBadge();}
+if(!checkPublicView()){loadTheme();loadCache();loadBoxLog();renderDashboard();fetchFromSheet();updateKeyBadge();}
 </script>
 </body>
 </html>
