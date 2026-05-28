@@ -292,19 +292,86 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
 .platform-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .btn-platform{padding:7px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s}
 .btn-platform:hover{background:var(--surface2)}
+
+/* ── Light mode ── */
+body.light-mode{--bg:#f5f5f5;--surface:#ffffff;--surface2:#ebebeb;--border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);--text:#111;--text2:#555;--text3:#999;--red:#dc2626;--red-dim:rgba(220,38,38,0.1);--blue:#2563eb;--blue-dim:rgba(37,99,235,0.1);--amber:#d97706;--amber-dim:rgba(217,119,6,0.1)}
+body.light-mode .ccard{box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+body.light-mode .metric{box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+/* ── ROI banner ── */
+.roi-banner{background:linear-gradient(135deg,rgba(0,230,118,0.12),rgba(0,230,118,0.04));border:1px solid rgba(0,230,118,0.25);border-radius:var(--r);padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.roi-left{flex:1}
+.roi-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace;margin-bottom:4px}
+.roi-value{font-size:32px;font-weight:700;letter-spacing:-1px;font-family:'DM Mono',monospace}
+.roi-value.pos{color:var(--green)}.roi-value.neg{color:var(--red)}
+.roi-right{text-align:right}
+.roi-stat{font-size:11px;color:var(--text2);margin-bottom:2px}
+.roi-stat strong{color:var(--text);font-family:'DM Mono',monospace}
+/* ── Sold analytics ── */
+.sold-analytics{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.sold-analytics-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace;margin-bottom:12px}
+.sold-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.sold-stat-box{background:var(--surface2);border-radius:var(--r-sm);padding:10px 12px}
+.sold-stat-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;font-family:'DM Mono',monospace;margin-bottom:3px}
+.sold-stat-val{font-size:16px;font-weight:700;font-family:'DM Mono',monospace}
+/* ── Wishlist ── */
+.wish-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
+.wish-card:hover{border-color:var(--border2)}
+.wish-card-emoji{font-size:22px;flex-shrink:0;width:36px;text-align:center}
+.wish-card-info{flex:1;min-width:0}
+.wish-card-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wish-card-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.wish-card-price{text-align:right;flex-shrink:0}
+.wish-price-target{font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)}
+.wish-priority{font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:99px;margin-top:3px;display:inline-block}
+.wish-high{background:rgba(248,113,113,0.15);color:#f87171}
+.wish-med{background:var(--amber-dim);color:var(--amber)}
+.wish-low{background:var(--blue-dim);color:var(--blue)}
+/* ── Card of the day ── */
+.cotd-card{background:linear-gradient(135deg,var(--surface2),var(--surface));border:1px solid var(--border2);border-radius:var(--r);padding:16px;margin-bottom:14px;position:relative;overflow:hidden}
+.cotd-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:radial-gradient(circle,var(--green-dim),transparent 70%);pointer-events:none}
+.cotd-label{font-size:10px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace;margin-bottom:8px}
+.cotd-name{font-size:18px;font-weight:700;letter-spacing:-.3px;margin-bottom:3px}
+.cotd-set{font-size:12px;color:var(--text2);margin-bottom:10px}
+.cotd-why{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.cotd-fact{background:rgba(0,0,0,0.2);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.5;font-style:italic}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="header">
     <div class="header-title">Card<span>Vault</span></div>
-    <div class="sync-pill syncing" id="syncPill"><div class="sync-dot"></div><span id="syncText">connecting</span></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="lightModeBtn" onclick="toggleLightMode()" style="background:none;border:1px solid var(--border2);border-radius:99px;padding:4px 10px;cursor:pointer;font-size:14px;color:var(--text2);line-height:1" title="Toggle light/dark">☀️</button>
+      <div class="sync-pill syncing" id="syncPill"><div class="sync-dot"></div><span id="syncText">connecting</span></div>
+    </div>
   </div>
 
   <div id="tab-dashboard" class="section active">
     <div id="dashBackupReminder" style="display:none;background:var(--amber-dim);border:1px solid rgba(255,171,64,.3);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--amber);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
       <span>💾 <strong>Reminder:</strong> Download a backup to protect your collection.</span>
       <span onclick="dismissBackupReminder()" style="cursor:pointer;font-size:18px;padding:0 4px;opacity:0.7">✕</span>
+    </div>
+    <div class="cotd-card" id="cotdCard" style="display:none">
+      <div class="cotd-label">✨ Card of the day</div>
+      <div class="cotd-name" id="cotdName"></div>
+      <div class="cotd-set" id="cotdSet"></div>
+      <div class="cotd-why" id="cotdWhy"></div>
+      <div class="cotd-fact" id="cotdFact"></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="refreshCotd()"><span id="cotdSpin" style="display:none" class="spin">◌ </span>New card</button>
+        <span style="font-size:11px;color:var(--text3);align-self:center" id="cotdDate"></span>
+      </div>
+    </div>
+    <div class="roi-banner" id="roiBanner" style="display:none">
+      <div class="roi-left">
+        <div class="roi-label">Portfolio ROI</div>
+        <div class="roi-value" id="roiValue">—</div>
+      </div>
+      <div class="roi-right">
+        <div class="roi-stat">Invested <strong id="roiInvested">—</strong></div>
+        <div class="roi-stat">Current value <strong id="roiCurrentVal">—</strong></div>
+        <div class="roi-stat">Total return <strong id="roiReturn">—</strong></div>
+      </div>
     </div>
     <div class="metrics" id="metrics"></div>
     <div class="chart-section">
@@ -442,6 +509,18 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
   </div>
 
   <div id="tab-sold" class="section">
+    <div class="sold-analytics" id="soldAnalytics" style="display:none">
+      <div class="sold-analytics-title">📊 Sales summary</div>
+      <div class="sold-stats-grid">
+        <div class="sold-stat-box"><div class="sold-stat-label">Total realized</div><div class="sold-stat-val pos" id="saTotal">—</div></div>
+        <div class="sold-stat-box"><div class="sold-stat-label">Cards sold</div><div class="sold-stat-val" id="saCount">—</div></div>
+        <div class="sold-stat-box"><div class="sold-stat-label">Best flip</div><div class="sold-stat-val pos" id="saBest">—</div></div>
+        <div class="sold-stat-box"><div class="sold-stat-label">Worst flip</div><div class="sold-stat-val neg" id="saWorst">—</div></div>
+        <div class="sold-stat-box"><div class="sold-stat-label">Avg profit/card</div><div class="sold-stat-val" id="saAvg">—</div></div>
+        <div class="sold-stat-box"><div class="sold-stat-label">Win rate</div><div class="sold-stat-val" id="saWinRate">—</div></div>
+      </div>
+      <div id="saBestCard" style="font-size:11px;color:var(--text2)"></div>
+    </div>
     <div class="search-wrap">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input class="search" id="soldSearch" placeholder="Search sold cards..." oninput="renderSold()">
@@ -621,6 +700,61 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
 </div>
 
 
+  <!-- WISHLIST TAB -->
+  <div id="tab-wishlist" class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text2)" id="wishCount">Loading…</div>
+      <button class="btn btn-green" style="padding:7px 14px;font-size:13px" onclick="openWishModal()">+ Add</button>
+    </div>
+    <div class="search-wrap" style="margin-bottom:10px">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search" id="wishSearch" placeholder="Search wishlist..." oninput="renderWishlist()">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none">
+      <button class="filter-btn active" id="wf-all" onclick="setWishFilter('all')">All</button>
+      <button class="filter-btn" id="wf-high" onclick="setWishFilter('high')">🔴 High</button>
+      <button class="filter-btn" id="wf-med" onclick="setWishFilter('med')">🟡 Medium</button>
+      <button class="filter-btn" id="wf-low" onclick="setWishFilter('low')">🔵 Low</button>
+    </div>
+    <div id="wishList"></div>
+    <div id="wishEmpty" style="display:none;text-align:center;padding:48px 0;color:var(--text3);font-size:14px">No cards on your wishlist yet</div>
+  </div>
+
+  <!-- WISHLIST MODAL -->
+  <div class="grade-modal-bg" id="wishModalBg" style="z-index:350">
+    <div class="grade-modal">
+      <div class="modal-handle"></div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:16px" id="wishModalTitle">Add to Wishlist</div>
+      <div class="form-block" style="margin-bottom:12px">
+        <div class="form-block-title">Card details</div>
+        <div class="form-row full"><div class="field"><label>Card name</label><input id="w-name" placeholder="e.g. 2023 Topps Chrome Shohei Ohtani Auto"></div></div>
+        <div class="form-row">
+          <div class="field"><label>Category</label>
+            <select id="w-cat"><option>Baseball</option><option>Basketball</option><option>Football</option><option>Hockey</option><option>Soccer</option><option>UFC</option><option>Pokemon</option><option>Yu-Gi-Oh!</option><option>Marvel</option><option>Disney</option><option>Other</option></select>
+          </div>
+          <div class="field"><label>Priority</label>
+            <select id="w-priority">
+              <option value="high">🔴 High</option>
+              <option value="med" selected>🟡 Medium</option>
+              <option value="low">🔵 Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Target buy price ($)</label><input id="w-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="field"><label>Max budget ($)</label><input id="w-max" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        </div>
+        <div class="form-row full"><div class="field"><label>Notes</label><input id="w-notes" placeholder="e.g. PSA 10 only, Prizm RC preferred"></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-green" id="wishSaveBtn" onclick="saveWishEntry()">Add to wishlist</button>
+        <button class="btn btn-outline" onclick="closeWishModal()">Cancel</button>
+        <button class="btn btn-red" id="wishDeleteBtn" style="display:none" onclick="deleteWishEntry()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+
   <!-- HOBBY TAB -->
   <div id="tab-hobby" class="section">
 
@@ -675,6 +809,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
   <button class="nav-btn" id="nav-add" onclick="showTab('add')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Add Card</button>
   <button class="nav-btn" id="nav-grading" onclick="showTab('grading')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/></svg>Grading</button>
   <button class="nav-btn" id="nav-sold" onclick="showTab('sold')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Sold</button>
+  <button class="nav-btn" id="nav-wishlist" onclick="showTab('wishlist')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Wishlist</button>
   <button class="nav-btn" id="nav-hobby" onclick="showTab('hobby')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Hobby</button>
   <button class="nav-btn" id="nav-backup" onclick="showTab('backup')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Backup</button>
   <button class="nav-btn" id="nav-settings" onclick="showTab('settings')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
@@ -993,6 +1128,7 @@ function showTab(tab){
   if(tab==='backup')renderBackupTab();
   if(tab==='settings')renderSettingsTab();
   if(tab==='hobby')renderHobbyTab();
+  if(tab==='wishlist'){renderWishlist();}
 }
 
 function catBadge(c){
@@ -1032,6 +1168,7 @@ function renderDashboard(){
     <div class="metric"><div class="metric-label">Realized profit</div><div class="metric-value ${realized>=0?'pos':'neg'}">${plStr(realized)}</div></div>
     <div class="metric wide"><div class="metric-label">Total spent (cards + boxes)</div><div class="metric-value" style="color:var(--red)">$${totalSpent.toFixed(2)}</div></div>`;
   renderBoxLogSection();
+  renderROI();
   const cats=[...new Set(cards.map(c=>c.category))];
   const catData=cats.map(cat=>({cat,val:cards.filter(c=>c.category===cat).reduce((s,c)=>s+pl(c),0)}));
   if(plChart){plChart.destroy();plChart=null;}
@@ -1172,6 +1309,7 @@ function renderCollection(){
 function setFilter(f){activeFilter=f;renderCollection();}
 
 function renderSold(){
+  renderSoldAnalytics();
   const q=(document.getElementById('soldSearch')?.value||'').toLowerCase();
   let sold=cards.filter(c=>c.sold);
   if(q)sold=sold.filter(c=>c.name.toLowerCase().includes(q)||(c.set||'').toLowerCase().includes(q));
@@ -2639,6 +2777,225 @@ function timeSince(ts){
 }
 // ── END HOBBY TAB ──────────────────────────────────────────────────────────
 
+
+// ── PORTFOLIO ROI ─────────────────────────────────────────────────────────
+function renderROI(){
+  const held=cards.filter(c=>!c.sold),sold=cards.filter(c=>c.sold);
+  const totalInvested=cards.reduce((s,c)=>s+c.buyPrice,0)+boxLog.reduce((s,b)=>s+b.totalCost,0);
+  const currentValue=held.reduce((s,c)=>s+c.marketValue,0);
+  const realizedGains=sold.reduce((s,c)=>s+(c.saleNet||c.salePrice)-c.buyPrice,0);
+  const totalReturn=currentValue+realizedGains-totalInvested;
+  const roiPct=totalInvested>0?((totalReturn/totalInvested)*100):0;
+  const banner=document.getElementById('roiBanner');
+  if(!banner||cards.length===0){if(banner)banner.style.display='none';return;}
+  banner.style.display='flex';
+  const rv=document.getElementById('roiValue');
+  rv.textContent=(roiPct>=0?'+':'')+roiPct.toFixed(1)+'%';
+  rv.className='roi-value '+(roiPct>=0?'pos':'neg');
+  document.getElementById('roiInvested').textContent='$'+totalInvested.toFixed(2);
+  document.getElementById('roiCurrentVal').textContent='$'+currentValue.toFixed(2);
+  const retEl=document.getElementById('roiReturn');
+  retEl.textContent=(totalReturn>=0?'+':'')+' $'+Math.abs(totalReturn).toFixed(2);
+  retEl.style.color=totalReturn>=0?'var(--green)':'var(--red)';
+}
+
+// ── SOLD ANALYTICS ────────────────────────────────────────────────────────
+function renderSoldAnalytics(){
+  const sold=cards.filter(c=>c.sold);
+  const panel=document.getElementById('soldAnalytics');
+  if(!panel)return;
+  if(!sold.length){panel.style.display='none';return;}
+  panel.style.display='block';
+  const profits=sold.map(c=>(c.saleNet||c.salePrice)-c.buyPrice);
+  const total=profits.reduce((s,v)=>s+v,0);
+  const best=Math.max(...profits);
+  const worst=Math.min(...profits);
+  const avg=total/profits.length;
+  const wins=profits.filter(p=>p>0).length;
+  const winRate=Math.round((wins/profits.length)*100);
+  const bestCard=sold[profits.indexOf(best)];
+  const worstCard=sold[profits.indexOf(worst)];
+  document.getElementById('saTotal').textContent=(total>=0?'+':'-')+'$'+Math.abs(total).toFixed(2);
+  document.getElementById('saTotal').style.color=total>=0?'var(--green)':'var(--red)';
+  document.getElementById('saCount').textContent=sold.length;
+  document.getElementById('saBest').textContent='+$'+best.toFixed(2);
+  document.getElementById('saWorst').textContent=(worst>=0?'+':'-')+'$'+Math.abs(worst).toFixed(2);
+  document.getElementById('saWorst').style.color=worst>=0?'var(--green)':'var(--red)';
+  document.getElementById('saAvg').textContent=(avg>=0?'+':'-')+'$'+Math.abs(avg).toFixed(2);
+  document.getElementById('saAvg').style.color=avg>=0?'var(--green)':'var(--red)';
+  document.getElementById('saWinRate').textContent=winRate+'%';
+  document.getElementById('saWinRate').style.color=winRate>=50?'var(--green)':'var(--red)';
+  document.getElementById('saBestCard').innerHTML=bestCard?`🏆 Best: <strong>${bestCard.name}</strong> · Worst: <strong>${worstCard.name}</strong>`:'';
+}
+
+// ── WISHLIST ──────────────────────────────────────────────────────────────
+let wishlist=[];
+const WISH_KEY='cardvault_wishlist';
+let editingWishIdx=-1;
+let activeWishFilter='all';
+
+function loadWishlist(){try{const d=localStorage.getItem(WISH_KEY);if(d)wishlist=JSON.parse(d);}catch(e){wishlist=[];}}
+function saveWishlist(){try{localStorage.setItem(WISH_KEY,JSON.stringify(wishlist));}catch(e){};}
+
+function setWishFilter(f){
+  activeWishFilter=f;
+  ['all','high','med','low'].forEach(k=>{const el=document.getElementById('wf-'+k);if(el)el.classList.toggle('active',k===f);});
+  renderWishlist();
+}
+
+function renderWishlist(){
+  const q=(document.getElementById('wishSearch')?.value||'').toLowerCase();
+  let items=activeWishFilter==='all'?wishlist:wishlist.filter(w=>w.priority===activeWishFilter);
+  if(q)items=items.filter(w=>w.name.toLowerCase().includes(q)||(w.notes||'').toLowerCase().includes(q));
+  const countEl=document.getElementById('wishCount');
+  if(countEl)countEl.textContent=wishlist.length+' card'+(wishlist.length!==1?'s':'')+' on wishlist'+(wishlist.length?', total budget $'+wishlist.reduce((s,w)=>s+(w.maxPrice||w.targetPrice||0),0).toFixed(2):'');
+  const list=document.getElementById('wishList');
+  const empty=document.getElementById('wishEmpty');
+  if(!list)return;
+  if(!items.length){list.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  // sort: high > med > low, then by target price desc
+  const order={high:0,med:1,low:2};
+  items=[...items].sort((a,b)=>(order[a.priority]||1)-(order[b.priority]||1));
+  list.innerHTML=items.map(w=>{
+    const idx=wishlist.indexOf(w);
+    const prioClass=w.priority==='high'?'wish-high':w.priority==='low'?'wish-low':'wish-med';
+    const prioLabel=w.priority==='high'?'🔴 High':w.priority==='low'?'🔵 Low':'🟡 Medium';
+    return `<div class="wish-card" onclick="openWishModal(${idx})">
+      <div class="wish-card-emoji">${catEmoji(w.category)||'🃏'}</div>
+      <div class="wish-card-info">
+        <div class="wish-card-name">${w.name}</div>
+        <div class="wish-card-sub">${w.category}${w.notes?' · '+w.notes:''}</div>
+      </div>
+      <div class="wish-card-price">
+        ${w.targetPrice?`<div class="wish-price-target">$${parseFloat(w.targetPrice).toFixed(2)}</div>`:''}
+        ${w.maxPrice?`<div style="font-size:10px;color:var(--text2)">max $${parseFloat(w.maxPrice).toFixed(2)}</div>`:''}
+        <span class="wish-priority ${prioClass}">${prioLabel}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openWishModal(editIdx){
+  editingWishIdx=editIdx>=0?editIdx:-1;
+  const w=editIdx>=0?wishlist[editIdx]:null;
+  document.getElementById('wishModalTitle').textContent=w?'Edit Wish Card':'Add to Wishlist';
+  document.getElementById('w-name').value=w?w.name:'';
+  document.getElementById('w-cat').value=w?w.category:'Baseball';
+  document.getElementById('w-priority').value=w?w.priority:'med';
+  document.getElementById('w-price').value=w?w.targetPrice:'';
+  document.getElementById('w-max').value=w?w.maxPrice:'';
+  document.getElementById('w-notes').value=w?w.notes:'';
+  document.getElementById('wishSaveBtn').textContent=w?'Save changes':'Add to wishlist';
+  document.getElementById('wishDeleteBtn').style.display=w?'inline-flex':'none';
+  document.getElementById('wishModalBg').classList.add('open');
+}
+function closeWishModal(){document.getElementById('wishModalBg').classList.remove('open');editingWishIdx=-1;}
+document.getElementById('wishModalBg').addEventListener('click',e=>{if(e.target===document.getElementById('wishModalBg'))closeWishModal();});
+
+function saveWishEntry(){
+  const name=document.getElementById('w-name').value.trim();
+  if(!name){showToast('Enter a card name');return;}
+  const entry={
+    name,
+    category:document.getElementById('w-cat').value,
+    priority:document.getElementById('w-priority').value,
+    targetPrice:parseFloat(document.getElementById('w-price').value)||0,
+    maxPrice:parseFloat(document.getElementById('w-max').value)||0,
+    notes:document.getElementById('w-notes').value.trim(),
+    addedAt:editingWishIdx>=0?wishlist[editingWishIdx].addedAt:Date.now()
+  };
+  if(editingWishIdx>=0){wishlist[editingWishIdx]=entry;}
+  else{wishlist.push(entry);}
+  saveWishlist();closeWishModal();
+  showToast(editingWishIdx>=0?'Updated!':'Added to wishlist!');
+  renderWishlist();
+}
+function deleteWishEntry(){
+  if(editingWishIdx<0)return;
+  if(!confirm('Remove '+wishlist[editingWishIdx].name+' from wishlist?'))return;
+  wishlist.splice(editingWishIdx,1);
+  saveWishlist();closeWishModal();showToast('Removed');renderWishlist();
+}
+
+// ── LIGHT MODE ────────────────────────────────────────────────────────────
+let isLightMode=false;
+function toggleLightMode(){
+  isLightMode=!isLightMode;
+  document.body.classList.toggle('light-mode',isLightMode);
+  const btn=document.getElementById('lightModeBtn');
+  if(btn)btn.textContent=isLightMode?'🌙':'☀️';
+  localStorage.setItem('light_mode',isLightMode?'1':'0');
+  // re-apply theme so accent/bg vars still work
+  applyTheme();
+}
+function loadLightMode(){
+  isLightMode=localStorage.getItem('light_mode')==='1';
+  document.body.classList.toggle('light-mode',isLightMode);
+  const btn=document.getElementById('lightModeBtn');
+  if(btn)btn.textContent=isLightMode?'🌙':'☀️';
+}
+
+// ── CARD OF THE DAY ───────────────────────────────────────────────────────
+let cotdCache=null;
+const COTD_KEY='cardvault_cotd';
+
+async function loadCotd(){
+  // check if we already have one for today
+  try{
+    const saved=JSON.parse(localStorage.getItem(COTD_KEY)||'null');
+    const today=new Date().toDateString();
+    if(saved&&saved.date===today&&saved.data){
+      cotdCache=saved.data;
+      renderCotd();
+      return;
+    }
+  }catch(e){}
+  const API_KEY=localStorage.getItem('anthropic_key')||'';
+  if(!API_KEY)return; // silently skip if no key
+  await refreshCotd();
+}
+
+async function refreshCotd(){
+  const API_KEY=localStorage.getItem('anthropic_key')||'';
+  if(!API_KEY){showToast('Add your Claude API key in Settings first');return;}
+  const spin=document.getElementById('cotdSpin');
+  if(spin)spin.style.display='inline';
+  const prompt=`Pick one iconic, interesting, or historically significant trading card from sports or Pokemon/TCG history and give a brief spotlight on it. Make it educational and engaging for a collector.
+
+Reply with ONLY raw JSON (no markdown, no backticks):
+{"name":"card name e.g. 1952 Topps Mickey Mantle #311","set":"year and set","category":"Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other","why":"2-3 sentences on what makes this card special — historical significance, rarity, cultural impact, record sale prices, etc.","funFact":"one surprising or little-known fact about this card"}`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:400,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('')||'';
+    const m=text.match(/\{[\s\S]*\}/);
+    if(!m)throw new Error('parse fail');
+    cotdCache=JSON.parse(m[0]);
+    localStorage.setItem(COTD_KEY,JSON.stringify({date:new Date().toDateString(),data:cotdCache}));
+    renderCotd();
+  }catch(e){console.warn('cotd error',e.message);}
+  if(spin)spin.style.display='none';
+}
+
+function renderCotd(){
+  if(!cotdCache)return;
+  const card=document.getElementById('cotdCard');
+  if(card)card.style.display='block';
+  const el=id=>document.getElementById(id);
+  if(el('cotdName'))el('cotdName').textContent=cotdCache.name||'';
+  if(el('cotdSet'))el('cotdSet').textContent=(cotdCache.set||'')+(cotdCache.category?' · '+cotdCache.category:'');
+  if(el('cotdWhy'))el('cotdWhy').textContent=cotdCache.why||'';
+  if(el('cotdFact'))el('cotdFact').textContent=cotdCache.funFact?'💡 '+cotdCache.funFact:'';
+  if(el('cotdDate'))el('cotdDate').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
 // Show recovery banner when offline — using direct DOM instead of override
 function updateRecoveryBanner(state){
   const banner=document.getElementById('recoveryBanner');
@@ -2692,7 +3049,7 @@ if('serviceWorker' in navigator){
     console.log('Service workers cleared');
   });
 }
-if(!checkPublicView()){loadTheme();loadCache();loadBoxLog();renderDashboard();fetchFromSheet();updateKeyBadge();}
+if(!checkPublicView()){loadTheme();loadLightMode();loadCache();loadBoxLog();loadWishlist();renderDashboard();fetchFromSheet();updateKeyBadge();loadCotd();}
 </script>
 </body>
 </html>
