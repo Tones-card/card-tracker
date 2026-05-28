@@ -340,7 +340,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
         <strong style="font-size:18px;font-family:'DM Mono',monospace;color:var(--amber)" id="blTotalDisplay">$0.00</strong>
       </div>
       <div class="btn-row">
-        <button class="btn btn-green" onclick="saveBoxLogEntry()">Save purchase</button>
+        <button class="btn btn-green" id="blSaveBtn" onclick="saveBoxLogEntry()">Save purchase</button>
         <button class="btn btn-outline" onclick="closeBoxLogModal()">Cancel</button>
       </div>
     </div>
@@ -977,6 +977,7 @@ function renderBoxLogSection(){
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--red)">$${b.totalCost.toFixed(2)}</div>
         <button onclick="deleteBoxLogEntry(${origIdx})" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:2px 0;font-family:'DM Sans',sans-serif">remove</button>
+        <button onclick="openBoxLogModal(${origIdx})" style="background:none;border:none;color:var(--blue);font-size:12px;cursor:pointer;padding:2px 0 2px 8px;font-family:'DM Sans',sans-serif">edit</button>
       </div>
     </div>`;
   }).join('');
@@ -992,6 +993,7 @@ function openBoxLogModal(editIdx){
   document.getElementById('bl-cost').value=b?b.costPer:'';
   document.getElementById('bl-date').value=b?b.date:new Date().toISOString().slice(0,10);
   document.getElementById('bl-notes').value=b?b.notes:'';
+  document.getElementById('blSaveBtn').textContent=b?'Save changes':'Save purchase';
   calcBoxLogTotal();
   document.getElementById('boxLogModalBg').classList.add('open');
 }
@@ -1024,7 +1026,7 @@ function saveBoxLogEntry(){
   else{boxLog.push(entry);}
   saveBoxLog();
   closeBoxLogModal();
-  showToast('Purchase logged — $'+(qty*cost).toFixed(2)+' total');
+  showToast(editingBoxIdx>=0?'Purchase updated!':'Purchase logged — $'+(qty*cost).toFixed(2)+' total');
   renderDashboard();
 }
 
