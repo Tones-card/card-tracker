@@ -170,7 +170,7 @@ img.lazy.loaded{opacity:1}
 .stat-row:last-child{border-bottom:none}
 .stat-row strong{color:var(--text)}
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100;max-width:480px;margin:0 auto}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;cursor:pointer;background:none;border:none;color:var(--text3);font-size:10px;font-family:'DM Sans',sans-serif;transition:color .15s}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;cursor:pointer;background:none;border:none;color:var(--text3);font-size:9px;font-family:'DM Sans',sans-serif;transition:color .15s}
 .nav-btn.active{color:var(--green)}
 .nav-btn svg{width:20px;height:20px}
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:99px;font-size:13px;z-index:400;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap;font-family:'DM Sans',sans-serif}
@@ -258,6 +258,28 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
 
 #boxLogSection .chart-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace}
 .listing-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-top:10px}
+.trend-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:10px}
+.trend-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.trend-card-name{font-size:14px;font-weight:600;flex:1;padding-right:8px}
+.trend-price{font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green);white-space:nowrap}
+.trend-meta{font-size:11px;color:var(--text2);margin-bottom:6px}
+.trend-why{font-size:12px;color:var(--text2);line-height:1.5}
+.trend-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.trend-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;font-family:'DM Mono',monospace}
+.trend-hot{background:rgba(255,112,67,0.15);color:#ff7043}
+.trend-rising{background:var(--green-dim);color:var(--green)}
+.trend-volume{background:var(--blue-dim);color:var(--blue)}
+.release-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start}
+.release-date-block{background:var(--surface);border-radius:var(--r-sm);padding:8px 10px;text-align:center;flex-shrink:0;min-width:48px}
+.release-date-month{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'DM Mono',monospace}
+.release-date-day{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);line-height:1.1}
+.release-info{flex:1;min-width:0}
+.release-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.release-brand{font-size:11px;color:var(--text2);margin-bottom:5px}
+.release-types{display:flex;gap:5px;flex-wrap:wrap}
+.release-type{font-size:10px;padding:2px 7px;border-radius:99px;background:var(--amber-dim);color:var(--amber);font-family:'DM Mono',monospace;font-weight:600}
+.hobby-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:32px 0;color:var(--text2);font-size:13px}
+.hobby-error{background:var(--red-dim);border-radius:var(--r-sm);padding:12px;color:var(--red);font-size:13px;text-align:center}
 .listing-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-family:'DM Mono',monospace}
 .listing-url-row{display:flex;gap:8px;margin-bottom:8px}
 .listing-url-input{flex:1;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text2);font-size:12px;font-family:'DM Mono',monospace;outline:none}
@@ -595,12 +617,62 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
   </div>
 </div>
 
+
+  <!-- HOBBY TAB -->
+  <div id="tab-hobby" class="section">
+
+    <!-- TRENDING CARDS -->
+    <div class="chart-section" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="chart-label" style="margin-bottom:0">🔥 Trending cards right now</div>
+        <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;display:flex;align-items:center;gap:5px" onclick="refreshTrending()" id="trendRefreshBtn">
+          <span id="trendRefreshIcon">↻</span> Refresh
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px" id="trendLastFetched">Tap Refresh to load latest trending cards</div>
+      <div id="trendingList">
+        <div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px">
+          📡 Hit Refresh to pull live hobby market data
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW RELEASES -->
+    <div class="chart-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="chart-label" style="margin-bottom:0">📅 Upcoming releases</div>
+        <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;display:flex;align-items:center;gap:5px" onclick="refreshReleases()" id="relRefreshBtn">
+          <span id="relRefreshIcon">↻</span> Refresh
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px" id="relLastFetched">Tap Refresh to load upcoming product releases</div>
+      <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px" id="relFilterRow">
+        <button class="filter-btn active" id="rf-all" onclick="setRelFilter('all')">All</button>
+        <button class="filter-btn" id="rf-baseball" onclick="setRelFilter('baseball')">Baseball</button>
+        <button class="filter-btn" id="rf-basketball" onclick="setRelFilter('basketball')">Basketball</button>
+        <button class="filter-btn" id="rf-football" onclick="setRelFilter('football')">Football</button>
+        <button class="filter-btn" id="rf-hockey" onclick="setRelFilter('hockey')">Hockey</button>
+        <button class="filter-btn" id="rf-soccer" onclick="setRelFilter('soccer')">Soccer</button>
+        <button class="filter-btn" id="rf-ufc" onclick="setRelFilter('ufc')">UFC</button>
+        <button class="filter-btn" id="rf-pokemon" onclick="setRelFilter('pokemon')">Pokemon</button>
+        <button class="filter-btn" id="rf-tcg" onclick="setRelFilter('tcg')">TCG</button>
+      </div>
+      <div id="releasesList">
+        <div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px">
+          📦 Hit Refresh to load upcoming product releases
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 <div class="bottom-nav">
   <button class="nav-btn active" id="nav-dashboard" onclick="showTab('dashboard')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
   <button class="nav-btn" id="nav-collection" onclick="showTab('collection')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 2v4M8 2v4M2 10h20"/></svg>Collection</button>
   <button class="nav-btn" id="nav-add" onclick="showTab('add')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>Add Card</button>
   <button class="nav-btn" id="nav-grading" onclick="showTab('grading')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/></svg>Grading</button>
   <button class="nav-btn" id="nav-sold" onclick="showTab('sold')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Sold</button>
+  <button class="nav-btn" id="nav-hobby" onclick="showTab('hobby')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Hobby</button>
   <button class="nav-btn" id="nav-backup" onclick="showTab('backup')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Backup</button>
   <button class="nav-btn" id="nav-settings" onclick="showTab('settings')"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
 </div>
@@ -896,6 +968,7 @@ function showTab(tab){
   if(tab==='grading')renderGrading();
   if(tab==='backup')renderBackupTab();
   if(tab==='settings')renderSettingsTab();
+  if(tab==='hobby')renderHobbyTab();
 }
 
 function catBadge(c){
@@ -2327,6 +2400,226 @@ function emergencyRecover(){
   renderDashboard();
   renderCollection();
 }
+
+
+// ── HOBBY TAB ──────────────────────────────────────────────────────────────
+let trendCache=null,trendCacheTime=0;
+let relCache=null,relCacheTime=0;
+let activeRelFilter='all';
+const HOBBY_CACHE_TTL=3*60*60*1000; // 3 hours
+
+function renderHobbyTab(){
+  // restore from sessionStorage cache if fresh
+  try{
+    const tc=sessionStorage.getItem('hobby_trend');
+    const tt=parseInt(sessionStorage.getItem('hobby_trend_time')||'0');
+    if(tc&&Date.now()-tt<HOBBY_CACHE_TTL){trendCache=JSON.parse(tc);trendCacheTime=tt;renderTrendingCards();}
+    const rc=sessionStorage.getItem('hobby_rel');
+    const rt=parseInt(sessionStorage.getItem('hobby_rel_time')||'0');
+    if(rc&&Date.now()-rt<HOBBY_CACHE_TTL){relCache=JSON.parse(rc);relCacheTime=rt;renderReleaseCards();}
+  }catch(e){}
+}
+
+function setRelFilter(f){
+  activeRelFilter=f;
+  ['all','baseball','basketball','football','hockey','soccer','ufc','pokemon','tcg'].forEach(k=>{
+    const el=document.getElementById('rf-'+k);
+    if(el)el.classList.toggle('active',k===f);
+  });
+  renderReleaseCards();
+}
+
+// ── TRENDING ──────────────────────────────────────────────────────────────
+async function refreshTrending(){
+  const API_KEY=localStorage.getItem('anthropic_key')||'';
+  if(!API_KEY){showToast('Add your Claude API key in Settings first');return;}
+  const btn=document.getElementById('trendRefreshBtn');
+  const icon=document.getElementById('trendRefreshIcon');
+  btn.disabled=true;icon.className='spin';icon.textContent='◌';
+  document.getElementById('trendingList').innerHTML='<div class="hobby-loading"><span class="spin">◌</span> Searching for trending cards…</div>';
+
+  const prompt=`You are a trading card hobby market expert with access to live data. Search the web RIGHT NOW for the most current trending sports and trading cards.
+
+Today's date: ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}.
+
+Search for: trending sports cards today, hot baseball cards this week, basketball rookie cards surging, football card prices rising, UFC cards trending, Pokemon cards spiking, hot card sales volume eBay.
+
+Return ONLY a JSON array of 8-10 cards that are genuinely trending RIGHT NOW based on your search. No markdown, no explanation, just the raw JSON array:
+[
+  {
+    "name": "Full player/card name",
+    "set": "Year and set name",
+    "category": "Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other",
+    "recentSalePrice": "$XX–$XX range",
+    "priceChange": "+XX% this week" or "🔥 High volume",
+    "reason": "1-2 sentences explaining exactly WHY this card is hot right now — specific event, rookie status, recent game performance, tournament result, set release, etc.",
+    "heat": "hot|rising|volume"
+  }
+]
+Only include cards with a real, specific reason they are trending today. Be accurate.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:2000,
+        tools:[{"type":"web_search_20250305","name":"web_search"}],
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('') || '';
+    const match=text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if(!match)throw new Error('Could not parse response');
+    trendCache=JSON.parse(match[0]);
+    trendCacheTime=Date.now();
+    sessionStorage.setItem('hobby_trend',JSON.stringify(trendCache));
+    sessionStorage.setItem('hobby_trend_time',trendCacheTime.toString());
+    renderTrendingCards();
+  }catch(e){
+    document.getElementById('trendingList').innerHTML=`<div class="hobby-error">⚠️ ${e.message.slice(0,120)}<br><br>Check your API key in Settings.</div>`;
+  }
+  btn.disabled=false;icon.className='';icon.textContent='↻';
+}
+
+function renderTrendingCards(){
+  if(!trendCache||!trendCache.length){return;}
+  const ago=trendCacheTime?timeSince(trendCacheTime)+' ago':'';
+  document.getElementById('trendLastFetched').textContent='Last updated: '+ago;
+  document.getElementById('trendingList').innerHTML=trendCache.map(t=>{
+    const heatClass=t.heat==='hot'?'trend-hot':t.heat==='rising'?'trend-rising':'trend-volume';
+    const heatLabel=t.heat==='hot'?'🔥 Hot':`t.heat==='rising'?'📈 Rising':'📊 High volume'`;
+    const label=t.heat==='hot'?'🔥 Hot':t.heat==='rising'?'📈 Rising':'📊 High volume';
+    return `<div class="trend-card">
+      <div class="trend-card-header">
+        <div class="trend-card-name">${t.name}</div>
+        <div class="trend-price">${t.recentSalePrice||''}</div>
+      </div>
+      <div class="trend-meta">${t.set||''} · ${t.category||''}</div>
+      <div class="trend-why">${t.reason||''}</div>
+      <div class="trend-badges">
+        <span class="trend-badge ${heatClass}">${label}</span>
+        ${t.priceChange?`<span class="trend-badge" style="background:var(--surface);color:var(--text2)">${t.priceChange}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RELEASES ──────────────────────────────────────────────────────────────
+async function refreshReleases(){
+  const API_KEY=localStorage.getItem('anthropic_key')||'';;
+  if(!API_KEY){showToast('Add your Claude API key in Settings first');return;}
+  const btn=document.getElementById('relRefreshBtn');
+  const icon=document.getElementById('relRefreshIcon');
+  btn.disabled=true;icon.className='spin';icon.textContent='◌';
+  document.getElementById('releasesList').innerHTML='<div class="hobby-loading"><span class="spin">◌</span> Searching for upcoming releases…</div>';
+
+  const prompt=`You are a trading card hobby expert. Search the web for the most current and upcoming trading card product releases.
+
+Today's date: ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}.
+
+Search for upcoming releases from ALL of these brands: Topps, Topps Chrome, Topps Update, Topps Heritage, Topps Stadium Club, Topps Archives, Topps Allen & Ginter, Bowman, Bowman Chrome, Bowman Draft, Panini, Panini Prizm, Panini Select, Panini Mosaic, Panini Donruss, Panini Contenders, Panini National Treasures, Panini Immaculate, Panini Optic, Panini Flawless, Upper Deck, Upper Deck Series, O-Pee-Chee, SP Authentic, Leaf, Leaf Metal, Sage Hit, Hit Parade, Pokemon TCG, Fusion Strike, Scarlet & Violet, Magic The Gathering, Skybox, Fleer, Score, Ultra, Certified, Chronicles, Gold Standard.
+
+Find releases from the past 30 days AND the next 90 days. Include hobby boxes, jumbo boxes, blaster boxes, retail, and special collector editions.
+
+Return ONLY a JSON array. No markdown, no explanation:
+[
+  {
+    "name": "Full product name e.g. 2025 Topps Series 2 Baseball",
+    "brand": "Topps|Panini|Upper Deck|Pokemon|etc",
+    "category": "Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other",
+    "releaseDate": "YYYY-MM-DD or Month DD YYYY — use exact date if known, approximate if not",
+    "month": "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec",
+    "day": "DD or TBD",
+    "formats": ["Hobby Box","Jumbo Box","Blaster Box","Hanger","Retail"] (include all available formats),
+    "description": "1 sentence about what makes this product notable — key rookies, autograph hits, print runs, etc.",
+    "status": "upcoming|released|shipping"
+  }
+]
+Include 15-25 products. Prioritize the most popular and relevant releases. Be accurate with dates.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:3000,
+        tools:[{"type":"web_search_20250305","name":"web_search"}],
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const text=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('')||''
+    const match=text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if(!match)throw new Error('Could not parse response');
+    relCache=JSON.parse(match[0]);
+    relCacheTime=Date.now();
+    sessionStorage.setItem('hobby_rel',JSON.stringify(relCache));
+    sessionStorage.setItem('hobby_rel_time',relCacheTime.toString());
+    renderReleaseCards();
+  }catch(e){
+    document.getElementById('releasesList').innerHTML=`<div class="hobby-error">⚠️ ${e.message.slice(0,120)}<br><br>Check your API key in Settings.</div>`;
+  }
+  btn.disabled=false;icon.className='';icon.textContent='↻';
+}
+
+function renderReleaseCards(){
+  if(!relCache||!relCache.length)return;
+  const ago=relCacheTime?timeSince(relCacheTime)+' ago':'';
+  document.getElementById('relLastFetched').textContent='Last updated: '+ago;
+  const catMap={baseball:'Baseball',basketball:'Basketball',football:'Football',hockey:'Hockey',soccer:'Soccer',ufc:'UFC',pokemon:'Pokemon',tcg:'TCG'};
+  let filtered=activeRelFilter==='all'?relCache:relCache.filter(r=>(r.category||'Other').toLowerCase()===activeRelFilter||(activeRelFilter==='tcg'&&(r.category==='TCG'||r.category==='Yu-Gi-Oh!'||r.category==='Magic')));
+  if(!filtered.length){
+    document.getElementById('releasesList').innerHTML='<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">No releases found for this category</div>';
+    return;
+  }
+  // sort by date
+  filtered=[...filtered].sort((a,b)=>{
+    const da=new Date(a.releaseDate||'2099');
+    const db=new Date(b.releaseDate||'2099');
+    return da-db;
+  });
+  const now=new Date();
+  document.getElementById('releasesList').innerHTML=filtered.map(r=>{
+    const rd=new Date(r.releaseDate);
+    const isValid=!isNaN(rd.getTime());
+    const isPast=isValid&&rd<now;
+    const month=isValid?rd.toLocaleString('default',{month:'short'}):'TBD';
+    const day=isValid?rd.getDate():' ';
+    const statusColor=r.status==='released'||isPast?'var(--green)':r.status==='shipping'?'var(--amber)':'var(--blue)';
+    const statusLabel=r.status==='released'||isPast?'✅ Released':r.status==='shipping'?'📦 Shipping':'🗓 Upcoming';
+    const formats=(r.formats||[]);
+    return `<div class="release-card">
+      <div class="release-date-block">
+        <div class="release-date-month">${month}</div>
+        <div class="release-date-day">${day}</div>
+        <div style="font-size:9px;color:${statusColor};margin-top:3px;font-family:'DM Mono',monospace;font-weight:600">${r.status==='released'||isPast?'OUT':'SOON'}</div>
+      </div>
+      <div class="release-info">
+        <div class="release-name">${r.name}</div>
+        <div class="release-brand">${r.brand||''} · ${r.category||''}</div>
+        ${r.description?`<div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.5">${r.description}</div>`:''}
+        <div class="release-types">${formats.slice(0,4).map(f=>`<span class="release-type">${f}</span>`).join('')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function timeSince(ts){
+  const diff=Date.now()-ts;
+  const mins=Math.floor(diff/60000);
+  if(mins<1)return'just now';
+  if(mins<60)return mins+'m';
+  const hrs=Math.floor(mins/60);
+  if(hrs<24)return hrs+'h';
+  return Math.floor(hrs/24)+'d';
+}
+// ── END HOBBY TAB ──────────────────────────────────────────────────────────
 
 // Show recovery banner when offline — using direct DOM instead of override
 function updateRecoveryBanner(state){
