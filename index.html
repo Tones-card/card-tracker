@@ -340,38 +340,13 @@ body.light-mode .metric{box-shadow:0 1px 4px rgba(0,0,0,0.06)}
 <div class="app">
   <div class="header">
     <div class="header-title">Card<span>Vault</span></div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <button id="lightModeBtn" onclick="toggleLightMode()" style="background:none;border:1px solid var(--border2);border-radius:99px;padding:4px 10px;cursor:pointer;font-size:14px;color:var(--text2);line-height:1" title="Toggle light/dark">☀️</button>
-      <div class="sync-pill syncing" id="syncPill"><div class="sync-dot"></div><span id="syncText">connecting</span></div>
-    </div>
+    <div class="sync-pill syncing" id="syncPill"><div class="sync-dot"></div><span id="syncText">connecting</span></div>
   </div>
 
   <div id="tab-dashboard" class="section active">
     <div id="dashBackupReminder" style="display:none;background:var(--amber-dim);border:1px solid rgba(255,171,64,.3);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--amber);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
       <span>💾 <strong>Reminder:</strong> Download a backup to protect your collection.</span>
       <span onclick="dismissBackupReminder()" style="cursor:pointer;font-size:18px;padding:0 4px;opacity:0.7">✕</span>
-    </div>
-    <div class="cotd-card" id="cotdCard" style="display:none">
-      <div class="cotd-label">✨ Card of the day</div>
-      <div class="cotd-name" id="cotdName"></div>
-      <div class="cotd-set" id="cotdSet"></div>
-      <div class="cotd-why" id="cotdWhy"></div>
-      <div class="cotd-fact" id="cotdFact"></div>
-      <div style="margin-top:10px;display:flex;gap:8px">
-        <button class="btn btn-outline" style="font-size:12px;padding:6px 12px" onclick="refreshCotd()"><span id="cotdSpin" style="display:none" class="spin">◌ </span>New card</button>
-        <span style="font-size:11px;color:var(--text3);align-self:center" id="cotdDate"></span>
-      </div>
-    </div>
-    <div class="roi-banner" id="roiBanner" style="display:none">
-      <div class="roi-left">
-        <div class="roi-label">Portfolio ROI</div>
-        <div class="roi-value" id="roiValue">—</div>
-      </div>
-      <div class="roi-right">
-        <div class="roi-stat">Invested <strong id="roiInvested">—</strong></div>
-        <div class="roi-stat">Current value <strong id="roiCurrentVal">—</strong></div>
-        <div class="roi-stat">Total return <strong id="roiReturn">—</strong></div>
-      </div>
     </div>
     <div class="metrics" id="metrics"></div>
     <div class="chart-section">
@@ -390,6 +365,19 @@ body.light-mode .metric{box-shadow:0 1px 4px rgba(0,0,0,0.06)}
       <div id="boxLogTotals" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>Total units logged</span><strong id="boxLogTotalCount" style="color:var(--text)"></strong></div>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2)"><span>Total spent on boxes/packs</span><strong id="boxLogTotalSpent" style="color:var(--red)"></strong></div>
+      </div>
+    </div>
+
+
+    <!-- CARD OF THE DAY -->
+    <div class="cotd-card" id="cotdCard" style="display:none">
+      <div class="cotd-label">✨ Card of the day</div>
+      <div class="cotd-name" id="cotdName"></div>
+      <div class="cotd-set" id="cotdSet"></div>
+      <div class="cotd-why" id="cotdWhy"></div>
+      <div class="cotd-fact" id="cotdFact"></div>
+      <div style="margin-top:8px">
+        <span style="font-size:11px;color:var(--text3)" id="cotdDate"></span>
       </div>
     </div>
   </div>
@@ -624,9 +612,16 @@ body.light-mode .metric{box-shadow:0 1px 4px rgba(0,0,0,0.06)}
         </div>
       </div>
 
-      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div style="font-size:12px;color:var(--text2)">Current: <span id="themePreviewLabel" style="color:var(--text)">Dark + Green</span></div>
         <button class="btn btn-outline" style="font-size:12px;padding:5px 12px" onclick="resetTheme()">Reset</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:var(--r-sm)">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">Light mode</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">Switch between dark and light</div>
+        </div>
+        <button id="lightModeBtn" onclick="toggleLightMode()" style="background:var(--surface);border:1px solid var(--border2);border-radius:99px;padding:6px 14px;cursor:pointer;font-size:14px;color:var(--text);line-height:1;font-family:'DM Sans',sans-serif">☀️ Light</button>
       </div>
     </div>
     <div class="form-block">
@@ -1192,7 +1187,20 @@ function renderDashboard(){
     <div class="metric wide"><div class="metric-label">Collection value</div><div class="metric-value">$${totalVal.toFixed(2)}</div></div>
     <div class="metric"><div class="metric-label">Unrealized P&L</div><div class="metric-value ${unrealized>=0?'pos':'neg'}">${plStr(unrealized)}</div></div>
     <div class="metric"><div class="metric-label">Realized profit</div><div class="metric-value ${realized>=0?'pos':'neg'}">${plStr(realized)}</div></div>
-    <div class="metric wide"><div class="metric-label">Total spent (cards + boxes)</div><div class="metric-value" style="color:var(--red)">$${totalSpent.toFixed(2)}</div></div>`;
+    <div class="metric wide"><div class="metric-label">Total spent (cards + boxes)</div><div class="metric-value" style="color:var(--red)">$${totalSpent.toFixed(2)}</div></div>
+    <div class="metric wide" id="roiMetric" style="display:none;background:linear-gradient(135deg,rgba(0,230,118,0.08),rgba(0,230,118,0.02));border-color:rgba(0,230,118,0.2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div>
+          <div class="metric-label">Portfolio ROI</div>
+          <div class="metric-value" id="roiValue" style="font-size:28px">—</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:3px">Total return <strong id="roiReturn" style="font-family:'DM Mono',monospace;color:var(--text)">—</strong></div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:3px">Current value <strong id="roiCurrentVal" style="font-family:'DM Mono',monospace;color:var(--text)">—</strong></div>
+          <div style="font-size:11px;color:var(--text2)">Invested <strong id="roiInvested" style="font-family:'DM Mono',monospace;color:var(--text)">—</strong></div>
+        </div>
+      </div>
+    </div>`;
   renderBoxLogSection();
   renderROI();
   const cats=[...new Set(cards.map(c=>c.category))];
@@ -2812,16 +2820,16 @@ function renderROI(){
   const realizedGains=sold.reduce((s,c)=>s+(c.saleNet||c.salePrice)-c.buyPrice,0);
   const totalReturn=currentValue+realizedGains-totalInvested;
   const roiPct=totalInvested>0?((totalReturn/totalInvested)*100):0;
-  const banner=document.getElementById('roiBanner');
-  if(!banner||cards.length===0){if(banner)banner.style.display='none';return;}
-  banner.style.display='flex';
+  const tile=document.getElementById('roiMetric');
+  if(!tile||cards.length===0){if(tile)tile.style.display='none';return;}
+  tile.style.display='flex';
   const rv=document.getElementById('roiValue');
   rv.textContent=(roiPct>=0?'+':'')+roiPct.toFixed(1)+'%';
-  rv.className='roi-value '+(roiPct>=0?'pos':'neg');
+  rv.style.color=roiPct>=0?'var(--green)':'var(--red)';
   document.getElementById('roiInvested').textContent='$'+totalInvested.toFixed(2);
   document.getElementById('roiCurrentVal').textContent='$'+currentValue.toFixed(2);
   const retEl=document.getElementById('roiReturn');
-  retEl.textContent=(totalReturn>=0?'+':'')+' $'+Math.abs(totalReturn).toFixed(2);
+  retEl.textContent=(totalReturn>=0?'+':'-')+'$'+Math.abs(totalReturn).toFixed(2);
   retEl.style.color=totalReturn>=0?'var(--green)':'var(--red)';
 }
 
@@ -2950,16 +2958,15 @@ function toggleLightMode(){
   isLightMode=!isLightMode;
   document.body.classList.toggle('light-mode',isLightMode);
   const btn=document.getElementById('lightModeBtn');
-  if(btn)btn.textContent=isLightMode?'🌙':'☀️';
+  if(btn)btn.textContent=isLightMode?'🌙 Dark':'☀️ Light';
   localStorage.setItem('light_mode',isLightMode?'1':'0');
-  // re-apply theme so accent/bg vars still work
   applyTheme();
 }
 function loadLightMode(){
   isLightMode=localStorage.getItem('light_mode')==='1';
   document.body.classList.toggle('light-mode',isLightMode);
   const btn=document.getElementById('lightModeBtn');
-  if(btn)btn.textContent=isLightMode?'🌙':'☀️';
+  if(btn)btn.textContent=isLightMode?'🌙 Dark':'☀️ Light';
 }
 
 // ── CARD OF THE DAY ───────────────────────────────────────────────────────
@@ -2984,9 +2991,7 @@ async function loadCotd(){
 
 async function refreshCotd(){
   const API_KEY=localStorage.getItem('anthropic_key')||'';
-  if(!API_KEY){showToast('Add your Claude API key in Settings first');return;}
-  const spin=document.getElementById('cotdSpin');
-  if(spin)spin.style.display='inline';
+  if(!API_KEY){return;}
   const prompt=`Pick one iconic, interesting, or historically significant trading card from sports or Pokemon/TCG history and give a brief spotlight on it. Make it educational and engaging for a collector.
 
 Reply with ONLY raw JSON (no markdown, no backticks):
