@@ -2402,6 +2402,35 @@ function emergencyRecover(){
 }
 
 
+// Robust JSON array extractor — handles web_search responses that mix tool blocks,
+// code fences, and prose before/after the JSON
+function extractJsonArray(contentBlocks){
+  // collect all text from text-type blocks only
+  const text=(contentBlocks||[]).filter(b=>b.type==='text').map(b=>b.text||'').join('\n');
+  // strategy 1: find a JSON array that starts with [{ (most specific)
+  const patterns=[
+    /```json\s*(\[[\s\S]*?\])\s*```/,   // fenced code block
+    /```\s*(\[[\s\S]*?\])\s*```/,        // plain code fence
+    /(\[\s*\{[\s\S]*\}\s*\])/            // bare array anywhere in text
+  ];
+  for(const pat of patterns){
+    const m=text.match(pat);
+    if(m){
+      try{const arr=JSON.parse(m[1]);if(Array.isArray(arr)&&arr.length)return arr;}
+      catch(e){}
+    }
+  }
+  // strategy 2: try each text block independently
+  for(const b of (contentBlocks||[])){
+    if(b.type!=='text')continue;
+    const t=(b.text||'').trim();
+    if(t.startsWith('[')){
+      try{const arr=JSON.parse(t);if(Array.isArray(arr)&&arr.length)return arr;}catch(e){}
+    }
+  }
+  return null;
+}
+
 // ── HOBBY TAB ──────────────────────────────────────────────────────────────
 let trendCache=null,trendCacheTime=0;
 let relCache=null,relCacheTime=0;
@@ -2438,25 +2467,12 @@ async function refreshTrending(){
   btn.disabled=true;icon.className='spin';icon.textContent='◌';
   document.getElementById('trendingList').innerHTML='<div class="hobby-loading"><span class="spin">◌</span> Searching for trending cards…</div>';
 
-  const prompt=`You are a trading card hobby market expert with access to live data. Search the web RIGHT NOW for the most current trending sports and trading cards.
+  const prompt=`Search the web for trending trading cards right now (${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}). Look for hot sports cards, rookie card surges, Pokemon spikes, and high-volume eBay sales across Baseball, Basketball, Football, UFC, Hockey, Soccer, and Pokemon.
 
-Today's date: ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}.
+Respond with ONLY a raw JSON array (no markdown, no backticks, no explanation before or after):
+[{"name":"player/card name","set":"year and set","category":"Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other","recentSalePrice":"$XX-$XX","priceChange":"+XX% or High volume","reason":"why trending now in 1-2 sentences","heat":"hot|rising|volume"}]
 
-Search for: trending sports cards today, hot baseball cards this week, basketball rookie cards surging, football card prices rising, UFC cards trending, Pokemon cards spiking, hot card sales volume eBay.
-
-Return ONLY a JSON array of 8-10 cards that are genuinely trending RIGHT NOW based on your search. No markdown, no explanation, just the raw JSON array:
-[
-  {
-    "name": "Full player/card name",
-    "set": "Year and set name",
-    "category": "Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other",
-    "recentSalePrice": "$XX–$XX range",
-    "priceChange": "+XX% this week" or "🔥 High volume",
-    "reason": "1-2 sentences explaining exactly WHY this card is hot right now — specific event, rookie status, recent game performance, tournament result, set release, etc.",
-    "heat": "hot|rising|volume"
-  }
-]
-Only include cards with a real, specific reason they are trending today. Be accurate.`;
+Return 6-8 cards. Real data only.`;
 
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
@@ -2464,23 +2480,22 @@ Only include cards with a real, specific reason they are trending today. Be accu
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-6',
-        max_tokens:2000,
+        max_tokens:1500,
         tools:[{"type":"web_search_20250305","name":"web_search"}],
         messages:[{role:'user',content:prompt}]
       })
     });
     const data=await res.json();
     if(data.error)throw new Error(data.error.message);
-    const text=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('') || '';
-    const match=text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if(!match)throw new Error('Could not parse response');
-    trendCache=JSON.parse(match[0]);
+    const parsed=extractJsonArray(data.content);
+    if(!parsed)throw new Error('Could not parse response — try again');
+    trendCache=parsed;
     trendCacheTime=Date.now();
     sessionStorage.setItem('hobby_trend',JSON.stringify(trendCache));
     sessionStorage.setItem('hobby_trend_time',trendCacheTime.toString());
     renderTrendingCards();
   }catch(e){
-    document.getElementById('trendingList').innerHTML=`<div class="hobby-error">⚠️ ${e.message.slice(0,120)}<br><br>Check your API key in Settings.</div>`;
+    document.getElementById('trendingList').innerHTML=`<div class="hobby-error">⚠️ ${e.message.slice(0,140)}</div>`;
   }
   btn.disabled=false;icon.className='';icon.textContent='↻';
 }
@@ -2510,36 +2525,19 @@ function renderTrendingCards(){
 
 // ── RELEASES ──────────────────────────────────────────────────────────────
 async function refreshReleases(){
-  const API_KEY=localStorage.getItem('anthropic_key')||'';;
+  const API_KEY=localStorage.getItem('anthropic_key')||'';
   if(!API_KEY){showToast('Add your Claude API key in Settings first');return;}
   const btn=document.getElementById('relRefreshBtn');
   const icon=document.getElementById('relRefreshIcon');
   btn.disabled=true;icon.className='spin';icon.textContent='◌';
   document.getElementById('releasesList').innerHTML='<div class="hobby-loading"><span class="spin">◌</span> Searching for upcoming releases…</div>';
 
-  const prompt=`You are a trading card hobby expert. Search the web for the most current and upcoming trading card product releases.
+  const prompt=`Search the web for trading card product releases from ${new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'})} — past 30 days and next 60 days. Include Topps, Bowman, Panini Prizm, Panini Select, Panini Donruss, Panini Contenders, Panini National Treasures, Panini Immaculate, Upper Deck, SP Authentic, Leaf, Pokemon TCG, and other major brands. Sports: Baseball, Basketball, Football, Hockey, Soccer, UFC, Pokemon, TCG.
 
-Today's date: ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}.
+Respond with ONLY a raw JSON array (no markdown, no backticks, no text before or after the array):
+[{"name":"product name","brand":"brand name","category":"Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other","releaseDate":"YYYY-MM-DD","month":"Jan-Dec","day":"DD or TBD","formats":["Hobby Box","Blaster Box"],"description":"one sentence on what makes it notable","status":"upcoming|released|shipping"}]
 
-Search for upcoming releases from ALL of these brands: Topps, Topps Chrome, Topps Update, Topps Heritage, Topps Stadium Club, Topps Archives, Topps Allen & Ginter, Bowman, Bowman Chrome, Bowman Draft, Panini, Panini Prizm, Panini Select, Panini Mosaic, Panini Donruss, Panini Contenders, Panini National Treasures, Panini Immaculate, Panini Optic, Panini Flawless, Upper Deck, Upper Deck Series, O-Pee-Chee, SP Authentic, Leaf, Leaf Metal, Sage Hit, Hit Parade, Pokemon TCG, Fusion Strike, Scarlet & Violet, Magic The Gathering, Skybox, Fleer, Score, Ultra, Certified, Chronicles, Gold Standard.
-
-Find releases from the past 30 days AND the next 90 days. Include hobby boxes, jumbo boxes, blaster boxes, retail, and special collector editions.
-
-Return ONLY a JSON array. No markdown, no explanation:
-[
-  {
-    "name": "Full product name e.g. 2025 Topps Series 2 Baseball",
-    "brand": "Topps|Panini|Upper Deck|Pokemon|etc",
-    "category": "Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other",
-    "releaseDate": "YYYY-MM-DD or Month DD YYYY — use exact date if known, approximate if not",
-    "month": "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec",
-    "day": "DD or TBD",
-    "formats": ["Hobby Box","Jumbo Box","Blaster Box","Hanger","Retail"] (include all available formats),
-    "description": "1 sentence about what makes this product notable — key rookies, autograph hits, print runs, etc.",
-    "status": "upcoming|released|shipping"
-  }
-]
-Include 15-25 products. Prioritize the most popular and relevant releases. Be accurate with dates.`;
+Return 12-18 products. Accurate dates only.`;
 
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
@@ -2547,23 +2545,22 @@ Include 15-25 products. Prioritize the most popular and relevant releases. Be ac
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-6',
-        max_tokens:3000,
+        max_tokens:2000,
         tools:[{"type":"web_search_20250305","name":"web_search"}],
         messages:[{role:'user',content:prompt}]
       })
     });
     const data=await res.json();
     if(data.error)throw new Error(data.error.message);
-    const text=data.content?.filter(b=>b.type==='text').map(b=>b.text).join('')||''
-    const match=text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if(!match)throw new Error('Could not parse response');
-    relCache=JSON.parse(match[0]);
+    const parsed=extractJsonArray(data.content);
+    if(!parsed)throw new Error('Could not parse response — try again');
+    relCache=parsed;
     relCacheTime=Date.now();
     sessionStorage.setItem('hobby_rel',JSON.stringify(relCache));
     sessionStorage.setItem('hobby_rel_time',relCacheTime.toString());
     renderReleaseCards();
   }catch(e){
-    document.getElementById('releasesList').innerHTML=`<div class="hobby-error">⚠️ ${e.message.slice(0,120)}<br><br>Check your API key in Settings.</div>`;
+    document.getElementById('releasesList').innerHTML=`<div class="hobby-error">⚠️ ${e.message.slice(0,140)}</div>`;
   }
   btn.disabled=false;icon.className='';icon.textContent='↻';
 }
