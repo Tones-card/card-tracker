@@ -979,6 +979,7 @@ const SCRIPT_URL='https://script.google.com/macros/s/AKfycbwfXRi64d-_mMbpXYYvxKI
 const CACHE_KEY='cardvault_v3';
 
 let cards=[],plChart=null,activeFilter='All';
+let sheetReady=false; // prevents pushing before first fetch completes
 let pendingPhoto=null,pendingPhotoB64=null,pendingPhotoMime='image/jpeg';
 let editPendingPhoto=null,editPendingPhotoB64=null,editPendingPhotoMime='image/jpeg';
 let editingIdx=-1,saveTimer=null;
@@ -987,8 +988,30 @@ const BOX_LOG_KEY='cardvault_boxlog';
 function loadBoxLog(){try{const d=localStorage.getItem(BOX_LOG_KEY);if(d)boxLog=JSON.parse(d);}catch(e){boxLog=[];}}
 function saveBoxLog(){try{localStorage.setItem(BOX_LOG_KEY,JSON.stringify(boxLog));}catch(e){}}
 
-function loadCache(){try{const c=localStorage.getItem(CACHE_KEY);if(c)cards=JSON.parse(c);}catch(e){cards=[];}}
-function saveCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify(cards));}catch(e){}}
+function loadCache(){
+  try{
+    // Clear any old cache keys that may have photos stored in them
+    ['cardvault_v2','cardvault_v1','tc_cards_master','tc_cards_v4','tc_cards_v3','tc_cards_v2','tc_cards','tc_sheet_v2','tc_sheet_cache'].forEach(k=>{
+      try{localStorage.removeItem(k);}catch(e){}
+    });
+    const c=localStorage.getItem(CACHE_KEY);
+    if(c)cards=JSON.parse(c);
+  }catch(e){cards=[];}
+}
+// Strip photos from localStorage cache — photos live in the sheet only.
+// This prevents the 5MB localStorage quota from filling up.
+function saveCache(){
+  try{
+    const stripped=cards.map(c=>({...c,photo:null}));
+    localStorage.setItem(CACHE_KEY,JSON.stringify(stripped));
+  }catch(e){
+    // If still too large, save without photos and without priceHistory
+    try{
+      const minimal=cards.map(c=>({...c,photo:null,priceHistory:[]}));
+      localStorage.setItem(CACHE_KEY,JSON.stringify(minimal));
+    }catch(e2){console.warn('Cache save failed:',e2.message);}
+  }
+}
 function setSyncStatus(s,m){const p=document.getElementById('syncPill');p.className='sync-pill '+s;document.getElementById('syncText').textContent=m;}
 
 function safeParseHistory(val){
@@ -1047,10 +1070,12 @@ async function fetchFromSheet(){
     const seen=new Set();
     cards=cards.filter(c=>{const k=c.name+'|'+c.addedAt;if(seen.has(k))return false;seen.add(k);return true;});
     saveCache();
+    sheetReady=true;
     setSyncStatus('synced','synced');
   }catch(e){
     console.error('fetch error:',e.message);
     loadCache();
+    sheetReady=true; // allow edits even if fetch failed
     if(e.name==='AbortError'){
       setSyncStatus('error','Sheet timed out — showing cached data');
     } else {
@@ -1079,6 +1104,7 @@ function buildSheetCards(){
 }
 
 async function pushToSheet(){
+  if(!sheetReady){console.warn('pushToSheet blocked — waiting for first fetch');return;}
   clearTimeout(saveTimer);
   saveCache();
   saveTimer=setTimeout(async()=>{
