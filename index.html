@@ -74,6 +74,9 @@ img.lazy.loaded{opacity:1}
 .badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;font-family:'DM Mono',monospace}
 .badge-sports{background:var(--blue-dim);color:var(--blue)}
 .badge-pokemon{background:var(--amber-dim);color:var(--amber)}
+.badge-yugioh{background:rgba(99,102,241,0.15);color:#818cf8}
+.badge-marvel{background:rgba(239,68,68,0.15);color:#f87171}
+.badge-disney{background:rgba(59,130,246,0.15);color:#60a5fa}
 .badge-ufc{background:rgba(255,82,82,0.15);color:#ff7043}
 .badge-hold{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,230,118,0.25)}
 .badge-sold{background:var(--red-dim);color:var(--red)}
@@ -471,7 +474,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
       <div class="field" style="margin-bottom:12px">
         <label>Claude API key</label>
         <div style="display:flex;gap:8px">
-          <input id="geminiKeyInput" type="password" placeholder="Paste your key here — AIzaSy..." style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:14px;font-family:'DM Mono',monospace;outline:none">
+          <input id="geminiKeyInput" type="password" placeholder="Paste your sk-ant-... key here" style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:14px;font-family:'DM Mono',monospace;outline:none">
           <button class="btn btn-green" onclick="saveGeminiKey()" style="flex-shrink:0;padding:10px 16px">Save</button>
         </div>
       </div>
@@ -580,7 +583,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
     </div>
     <div class="form-block" style="margin-bottom:12px">
       <div class="form-block-title">Breakdown</div>
-      <div class="fee-row"><span>eBay fees</span><strong id="feeBreakEbay">-$0.00</strong></div>
+      <div class="fee-row"><span id="feeBreakEbayLabel">Platform fees</span><strong id="feeBreakEbay">-$0.00</strong></div>
       <div class="fee-row"><span>Shipping</span><strong id="feeBreakShip">-$0.00</strong></div>
       <div class="fee-row"><span>Other</span><strong id="feeBreakOther">$0.00</strong></div>
       <div class="fee-row"><span>Net proceeds</span><strong id="feeBreakNet">$0.00</strong></div>
@@ -754,6 +757,9 @@ async function fetchFromSheet(){
       listed:r.listed==='true'||r.listed===true,
       personal:r.personal==='true'||r.personal===true
     })).filter(c=>c.name.trim());
+    // De-duplicate by name+addedAt in case of sheet duplicates
+    const seen=new Set();
+    cards=cards.filter(c=>{const k=c.name+'|'+c.addedAt;if(seen.has(k))return false;seen.add(k);return true;});
     saveCache();
     setSyncStatus('synced','synced');
   }catch(e){
@@ -822,7 +828,14 @@ function showTab(tab){
   if(tab==='settings')renderSettingsTab();
 }
 
-function catBadge(c){return c==='Pokemon'||c==='Yu-Gi-Oh!'||c==='Marvel'||c==='Disney'?'badge-pokemon':c==='UFC'?'badge-ufc':'badge-sports';}
+function catBadge(c){
+  if(c==='Pokemon')return'badge-pokemon';
+  if(c==='Yu-Gi-Oh!')return'badge-yugioh';
+  if(c==='Marvel')return'badge-marvel';
+  if(c==='Disney')return'badge-disney';
+  if(c==='UFC')return'badge-ufc';
+  return'badge-sports';
+}
 function pl(c){if(c.sold)return(c.saleNet||c.salePrice)-c.buyPrice;return c.marketValue-c.buyPrice;}
 function plStr(v){return(v>=0?'+':'-')+'$'+Math.abs(v).toFixed(2);}
 function catEmoji(cat){return{Baseball:'⚾',Basketball:'🏀',Football:'🏈',Hockey:'🏒',Soccer:'⚽',UFC:'🥊',Pokemon:'✦','Yu-Gi-Oh!':'🐉',Marvel:'⚡',Disney:'✨',Other:'🃏'}[cat]||'🃏';}
@@ -874,7 +887,7 @@ function renderCollection(){
     const targetHit=c.targetWin>0&&c.marketValue>=c.targetWin;
     const cls=targetHit?'ccard-target':c.watch?'ccard-watch':'';
     return `<div class="ccard ${cls}" onclick="openCard(${idx})">${img}<div class="card-body">
-      <div class="card-badges"><span class="badge ${catBadge(c.category)}">${c.category}</span><span class="badge ${c.personal?'badge-personal':c.listed?'badge-listed':c.watch?'badge-watch':'badge-hold'}">${c.personal?'👑 personal':c.listed?'🏷️ listed':c.watch?'🔥 watch':'🏦 holding'}</span></div>
+      <div class="card-badges"><span class="badge ${catBadge(c.category)}">${c.category}</span><span class="badge ${c.personal?'badge-personal':c.listed?'badge-listed':c.watch?'badge-watch':'badge-hold'}">${c.personal?'👑 personal':c.listed?'🏷️ listed':c.watch?'🔥 watch':'🏦 holding'}</span>${c.watch&&(c.personal||c.listed)?'<span class="badge badge-watch">🔥</span>':''}</div>
       <div class="card-name">${c.name}</div>
       <div class="card-set">${c.set||''} ${c.condition?'· '+c.condition:''}</div>
       <div class="card-stats"><span>Paid</span><span>$${c.buyPrice.toFixed(2)}</span></div>
@@ -999,7 +1012,7 @@ Use Raw for condition unless you can clearly see a PSA or BGS grading label on a
       'anthropic-dangerous-direct-browser-access':'true'
     },
     body:JSON.stringify({
-      model:'claude-sonnet-4-5',
+      model:'claude-sonnet-4-6',
       max_tokens:800,
       messages:[{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:m,data:b64}},
@@ -1067,7 +1080,7 @@ async function getAIPrice(){
         'anthropic-version':'2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
-      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:512,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:512,messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
     if(data.error)throw new Error(data.error.message);
@@ -1075,13 +1088,17 @@ async function getAIPrice(){
   }catch(e){box.textContent='Could not fetch estimate: '+e.message;}
 }
 
+let addingCard=false;
 function addCard(){
+  if(addingCard)return;
   const name=document.getElementById('f-name').value.trim();
   const buy=parseFloat(document.getElementById('f-buy').value);
   const val=parseFloat(document.getElementById('f-val').value);
   if(!name||isNaN(buy)||isNaN(val)){showToast('Fill in name, buy price, and market value');return;}
-  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),pull:document.getElementById('f-pull').value.trim(),photo:pendingPhoto,sold:false,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null,listingUrl:'',listed:false,personal:false});
+  addingCard=true;
+  cards.push({name,set:document.getElementById('f-set').value.trim(),category:document.getElementById('f-cat').value,condition:document.getElementById('f-cond').value,buyPrice:buy,marketValue:val,notes:document.getElementById('f-notes').value.trim(),pull:document.getElementById('f-pull').value.trim(),photo:pendingPhoto,sold:false,salePrice:0,saleFees:0,saleNet:0,addedAt:Date.now(),watch:false,event:'',opponent:'',targetWin:0,targetLose:0,comp:'',priceHistory:[],grading:null,listingUrl:'',listed:false,personal:false});
   pushToSheet();clearForm();showToast('Card added — syncing!');showTab('collection');
+  setTimeout(()=>{addingCard=false;},2000);
   // remind to backup every 10 cards
   if(cards.length%10===0)showToast('💾 '+cards.length+' cards! Go to Backup tab to download a backup.');
 }
@@ -1179,7 +1196,6 @@ function openCard(idx){
         <button class="btn-platform" onclick="listOn('ebay',${idx})">📦 eBay</button>
         <button class="btn-platform" onclick="listOn('facebook',${idx})">👥 Facebook</button>
         <button class="btn-platform" onclick="listOn('whatnot',${idx})">🎥 Whatnot</button>
-        <button class="btn-platform" onclick="listOn('mercari',${idx})">🛍️ Mercari</button>
       </div>
 
       <div style="height:1px;background:var(--border);margin:12px 0"></div>
@@ -1339,10 +1355,13 @@ function openFeeModal(idx){
 function setPlatformFees(){
   const p=document.getElementById('feePlatform').value;
   const fees={ebay:{pct:13,ship:4},cash:{pct:0,ship:0},whatnot:{pct:8,ship:0},pwcc:{pct:10,ship:0},facebook:{pct:0,ship:0},custom:{pct:0,ship:0}};
+  const labels={ebay:'eBay fees',cash:'Platform fees',whatnot:'Whatnot fees',pwcc:'PWCC fees',facebook:'FB fees',custom:'Platform fees'};
   const f=fees[p]||fees.ebay;
   document.getElementById('feeEbay').value=f.pct;
   document.getElementById('feeShipping').value=f.ship;
   document.getElementById('feeOther').value=0;
+  const lbl=document.getElementById('feeBreakEbayLabel');
+  if(lbl)lbl.textContent=labels[p]||'Platform fees';
   calcFees();
 }
 
@@ -1371,6 +1390,8 @@ function confirmSale(){
   const other=parseFloat(document.getElementById('feeOther').value)||0;
   const fees=sale*(ebayPct/100)+ship+other;
   cards[feeModalIdx].sold=true;
+  cards[feeModalIdx].listed=false;
+  cards[feeModalIdx].watch=false;
   cards[feeModalIdx].salePrice=sale;
   cards[feeModalIdx].salePlatform=document.getElementById('feePlatform').value;
   cards[feeModalIdx].saleFees=parseFloat(fees.toFixed(2));
@@ -1683,7 +1704,7 @@ function generatePublicLink(){
     name:c.name,set:c.set,category:c.category,condition:c.condition,
     notes:c.notes,marketValue:c.marketValue,sold:c.sold,
     salePrice:c.salePrice,saleNet:c.saleNet,buyPrice:c.buyPrice,
-    photo:c.photo||null
+    photo:null  // strip photos — URLs would be too large with base64 images
   }));
   const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(pub))));
   const url=window.location.origin+window.location.pathname+'?view='+encoded;
@@ -1847,7 +1868,7 @@ Return ONLY the title, nothing else.`;
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:120,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:120,messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
     if(data.error)throw new Error(data.error.message);
@@ -1889,8 +1910,6 @@ function listOn(platform, idx){
     url=`https://www.facebook.com/marketplace/create/item?title=${encodedTitle}&price=${price}&category=sports_collectibles`;
   } else if(platform==='whatnot'){
     url=`https://www.whatnot.com/sell`;
-  } else if(platform==='mercari'){
-    url=isMobile?'mercari://selling':'https://www.mercari.com/sell/';
   }
   if(url)window.open(url,'_blank');
 }
@@ -2037,7 +2056,7 @@ Be specific and honest. If the photo is unclear say so in confidence field.`;
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:m,data:b64}},{type:'text',text:prompt}]}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:m,data:b64}},{type:'text',text:prompt}]}]})
     });
     const data=await res.json();
     if(data.error)throw new Error(data.error.message);
