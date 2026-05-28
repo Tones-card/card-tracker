@@ -629,7 +629,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
           <span id="trendRefreshIcon">↻</span> Refresh
         </button>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:12px" id="trendLastFetched">Tap Refresh to load latest trending cards</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px" id="trendLastFetched">Tap Refresh to load latest trending cards · AI knowledge-based</div>
       <div id="trendingList">
         <div style="text-align:center;padding:32px 0;color:var(--text3);font-size:13px">
           📡 Hit Refresh to pull live hobby market data
@@ -645,7 +645,7 @@ body.theme-default{--acc:#00e676;--acc-dim:rgba(0,230,118,0.12);--acc-dark:#00c8
           <span id="relRefreshIcon">↻</span> Refresh
         </button>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:12px" id="relLastFetched">Tap Refresh to load upcoming product releases</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px" id="relLastFetched">Tap Refresh to load upcoming product releases · AI knowledge-based</div>
       <div style="display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px" id="relFilterRow">
         <button class="filter-btn active" id="rf-all" onclick="setRelFilter('all')">All</button>
         <button class="filter-btn" id="rf-baseball" onclick="setRelFilter('baseball')">Baseball</button>
@@ -2467,12 +2467,10 @@ async function refreshTrending(){
   btn.disabled=true;icon.className='spin';icon.textContent='◌';
   document.getElementById('trendingList').innerHTML='<div class="hobby-loading"><span class="spin">◌</span> Searching for trending cards…</div>';
 
-  const prompt=`Search the web for trending trading cards right now (${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}). Look for hot sports cards, rookie card surges, Pokemon spikes, and high-volume eBay sales across Baseball, Basketball, Football, UFC, Hockey, Soccer, and Pokemon.
+  const prompt=`You are a trading card hobby market expert. Based on your knowledge, list 6-8 trading cards that are currently trending or have been notably hot recently across Baseball, Basketball, Football, UFC, Hockey, Soccer, and Pokemon/TCG. Focus on rookies, players having big seasons, recent set releases driving demand, and high-volume cards on secondary markets.
 
-Respond with ONLY a raw JSON array (no markdown, no backticks, no explanation before or after):
-[{"name":"player/card name","set":"year and set","category":"Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other","recentSalePrice":"$XX-$XX","priceChange":"+XX% or High volume","reason":"why trending now in 1-2 sentences","heat":"hot|rising|volume"}]
-
-Return 6-8 cards. Real data only.`;
+Reply with ONLY a raw JSON array, no markdown, no backticks, nothing else:
+[{"name":"player/card name","set":"year and set","category":"Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other","recentSalePrice":"$XX-$XX est","priceChange":"+XX% or High volume","reason":"why this card is hot right now in 1-2 sentences","heat":"hot|rising|volume"}]`;
 
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
@@ -2480,8 +2478,7 @@ Return 6-8 cards. Real data only.`;
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-6',
-        max_tokens:1500,
-        tools:[{"type":"web_search_20250305","name":"web_search"}],
+        max_tokens:1200,
         messages:[{role:'user',content:prompt}]
       })
     });
@@ -2532,12 +2529,13 @@ async function refreshReleases(){
   btn.disabled=true;icon.className='spin';icon.textContent='◌';
   document.getElementById('releasesList').innerHTML='<div class="hobby-loading"><span class="spin">◌</span> Searching for upcoming releases…</div>';
 
-  const prompt=`Search the web for trading card product releases from ${new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'})} — past 30 days and next 60 days. Include Topps, Bowman, Panini Prizm, Panini Select, Panini Donruss, Panini Contenders, Panini National Treasures, Panini Immaculate, Upper Deck, SP Authentic, Leaf, Pokemon TCG, and other major brands. Sports: Baseball, Basketball, Football, Hockey, Soccer, UFC, Pokemon, TCG.
+  const now=new Date();
+  const prompt=`You are a trading card hobby expert. List recent and upcoming trading card product releases — anything released in the past 60 days or coming in the next 90 days from today (${now.toLocaleDateString('en-US',{month:'long',year:'numeric'})}). Cover all major brands: Topps, Bowman, Panini Prizm, Panini Select, Panini Mosaic, Panini Donruss, Panini Contenders, Panini National Treasures, Panini Immaculate, Panini Optic, Panini Flawless, Upper Deck, SP Authentic, O-Pee-Chee, Leaf, Hit Parade, Pokemon TCG, and others. Include Baseball, Basketball, Football, Hockey, Soccer, UFC, Pokemon, and TCG products.
 
-Respond with ONLY a raw JSON array (no markdown, no backticks, no text before or after the array):
-[{"name":"product name","brand":"brand name","category":"Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other","releaseDate":"YYYY-MM-DD","month":"Jan-Dec","day":"DD or TBD","formats":["Hobby Box","Blaster Box"],"description":"one sentence on what makes it notable","status":"upcoming|released|shipping"}]
+Reply with ONLY a raw JSON array, no markdown, no backticks, nothing else:
+[{"name":"product name","brand":"brand","category":"Baseball|Basketball|Football|Hockey|Soccer|UFC|Pokemon|TCG|Other","releaseDate":"YYYY-MM-DD","month":"Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec","day":"DD or TBD","formats":["Hobby Box","Blaster Box","Jumbo Box","Retail","Hanger"],"description":"one sentence on what makes it notable","status":"upcoming|released|shipping"}]
 
-Return 12-18 products. Accurate dates only.`;
+Return 14-20 products.`;
 
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
@@ -2546,7 +2544,6 @@ Return 12-18 products. Accurate dates only.`;
       body:JSON.stringify({
         model:'claude-sonnet-4-6',
         max_tokens:2000,
-        tools:[{"type":"web_search_20250305","name":"web_search"}],
         messages:[{role:'user',content:prompt}]
       })
     });
