@@ -1272,7 +1272,7 @@ function deleteBoxLogEntry(idx){
   renderDashboard();
 }
 
-document.getElementById('boxLogModalBg').addEventListener('click',e=>{if(e.target===document.getElementById('boxLogModalBg'))closeBoxLogModal();});
+const _boxBg=document.getElementById('boxLogModalBg');if(_boxBg)_boxBg.addEventListener('click',e=>{if(e.target===_boxBg)closeBoxLogModal();});
 
 function renderCollection(){
   renderSortRow();
@@ -1634,7 +1634,7 @@ function openCard(idx){
 }
 
 function closeModal(){document.getElementById('modalBg').classList.remove('open');}
-document.getElementById('modalBg').addEventListener('click',e=>{if(e.target===document.getElementById('modalBg'))closeModal();});
+const _modalBg=document.getElementById('modalBg');if(_modalBg)_modalBg.addEventListener('click',e=>{if(e.target===_modalBg)closeModal();});
 
 function openEditModal(idx){
   editingIdx=idx;
@@ -2072,7 +2072,7 @@ function clearGrading(){
   pushToSheet();closeGradeModal();showToast('Grading removed');renderCollection();renderGrading();
 }
 
-document.getElementById('gradeModalBg').addEventListener('click',e=>{if(e.target===document.getElementById('gradeModalBg'))closeGradeModal();});
+const _gradeBg=document.getElementById('gradeModalBg');if(_gradeBg)_gradeBg.addEventListener('click',e=>{if(e.target===_gradeBg)closeGradeModal();});
 
 
 // SORT
@@ -2891,7 +2891,7 @@ function openWishModal(editIdx){
   document.getElementById('wishModalBg').classList.add('open');
 }
 function closeWishModal(){document.getElementById('wishModalBg').classList.remove('open');editingWishIdx=-1;}
-document.getElementById('wishModalBg').addEventListener('click',e=>{if(e.target===document.getElementById('wishModalBg'))closeWishModal();});
+const _wishBg=document.getElementById('wishModalBg');if(_wishBg)_wishBg.addEventListener('click',e=>{if(e.target===_wishBg)closeWishModal();});
 
 function saveWishEntry(){
   const name=document.getElementById('w-name').value.trim();
